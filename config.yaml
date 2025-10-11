@@ -1,0 +1,47 @@
+# CharlieGPT Configuration
+
+# Discord Bot Settings (token loaded from .env)
+discord:
+  command_prefix: "!"
+  max_response_length: 2000
+
+# User Settings (loaded from .env file)
+# Set DISCORD_USER_ID and DISCORD_USERNAME in your .env file
+
+# Model Settings
+model:
+  name: "llama-3.1-8b-instruct"  # or "qwen-2.5-8b-instruct"
+  quantization: "Q4_K_M"
+  context_length: 4096
+  max_tokens: 512
+  temperature: 0.8
+  top_p: 0.9
+  top_k: 40
+
+# RAG Settings
+rag:
+  enabled: true
+  num_contexts: 5  # Number of relevant past messages to retrieve from vector DB
+  embedding_model: "all-MiniLM-L6-v2"
+  similarity_threshold: 0.5
+  channel_history_limit: 10  # Number of recent messages from current channel to include as immediate context
+
+# Training Settings (for Mac)
+training:
+  base_model: "Qwen/Qwen2.5-3B-Instruct"  # 3B model for fast Mac training
+  output_dir: "./models/charliegpt-lora"
+  epochs: 2
+  batch_size: 4  # Larger batch size with smaller model
+  learning_rate: 0.0002
+  lora_rank: 16  # Standard LoRA rank
+  lora_alpha: 32
+  lora_dropout: 0.05
+  max_seq_length: 1024  # Full context length
+
+# Paths
+paths:
+  data_dir: "./data"
+  processed_data_dir: "./processed_data"
+  models_dir: "./models"
+  vectordb_dir: "./vectordb"
+  llama_cpp_path: "./llama.cpp"  # Path to llama.cpp installation

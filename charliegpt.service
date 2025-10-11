@@ -1,0 +1,30 @@
+# Systemd service file for CharlieGPT Discord bot
+# Copy this to /etc/systemd/system/charliegpt.service on Raspberry Pi
+#
+# Setup:
+#   sudo cp charliegpt.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable charliegpt
+#   sudo systemctl start charliegpt
+#
+# Check status:
+#   sudo systemctl status charliegpt
+#
+# View logs:
+#   sudo journalctl -u charliegpt -f
+
+[Unit]
+Description=CharlieGPT Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/CharlieGPT
+Environment="PATH=/home/pi/CharlieGPT/venv/bin"
+ExecStart=/home/pi/CharlieGPT/venv/bin/python bot/bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
