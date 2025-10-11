@@ -2,6 +2,8 @@
 
 A personalized Discord bot trained on your messages to mimic your writing style, powered by fine-tuned Llama 3.1 8B with RAG (Retrieval Augmented Generation) for contextual awareness.
 
+i made it to imitate me (hence the name CharlieGPT) but the framework here can be used to mimic anyone
+
 ## Overview
 
 CharlieGPT combines:
