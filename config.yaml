@@ -26,17 +26,17 @@ rag:
   similarity_threshold: 0.5
   channel_history_limit: 10  # Number of recent messages from current channel to include as immediate context
 
-# Training Settings (for Mac)
+# Training Settings (for Mac - Optimized for speed)
 training:
   base_model: "Qwen/Qwen2.5-3B-Instruct"  # 3B model for fast Mac training
   output_dir: "./models/charliegpt-lora"
-  epochs: 2
+  epochs: 1  # Reduced for speed
   batch_size: 4  # Larger batch size with smaller model
   learning_rate: 0.0002
-  lora_rank: 16  # Standard LoRA rank
-  lora_alpha: 32
+  lora_rank: 8  # Reduced for speed
+  lora_alpha: 16
   lora_dropout: 0.05
-  max_seq_length: 1024  # Full context length
+  max_seq_length: 256  # Reduced for 4x speed improvement
 
 # Paths
 paths:

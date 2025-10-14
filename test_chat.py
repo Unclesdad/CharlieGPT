@@ -43,7 +43,7 @@ class LocalChatTester:
             self._load_rag()
 
     def _load_model(self):
-        """Load the trained model with 4-bit quantization."""
+        """Load the trained model (with quantization on CUDA, without on Mac)."""
         # Check if model exists
         model_path = Path(self.model_path)
         if not model_path.exists():
@@ -53,22 +53,37 @@ class LocalChatTester:
                 "Expected path: ./models/charliegpt-lora_merged/"
             )
 
-        # Configure 4-bit quantization for faster inference on Mac
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_use_double_quant=True,
-        )
-
         # Load model
         print(f"Loading from: {self.model_path}")
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_path,
-            quantization_config=bnb_config,
-            device_map="auto",
-            trust_remote_code=True,
-        )
+
+        if torch.cuda.is_available():
+            # Use 4-bit quantization on CUDA for faster inference
+            print("Loading with 4-bit quantization (CUDA)")
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_use_double_quant=True,
+            )
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_path,
+                quantization_config=bnb_config,
+                device_map="auto",
+                trust_remote_code=True,
+            )
+        else:
+            # Load on CPU for Mac (MPS has temporary array size limitations)
+            print("Loading on CPU (Mac)")
+            print("Note: Inference will be slower on CPU but more stable")
+            print("Loading model into RAM (this may take 30-60 seconds)...")
+
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_path,
+                torch_dtype=torch.float32,
+                trust_remote_code=True,
+                device_map={"": "cpu"},  # Force load everything to CPU RAM
+            )
+            print("Model fully loaded into RAM")
 
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
@@ -101,7 +116,7 @@ class LocalChatTester:
         rag_context: Optional[List[str]] = None
     ) -> str:
         """
-        Format prompt with Llama 3.1 chat template.
+        Format prompt with Qwen 2.5 chat template.
 
         Args:
             user_message: The user's message
@@ -112,7 +127,7 @@ class LocalChatTester:
             Formatted prompt string
         """
         # Start with system message
-        prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
+        prompt = "<|im_start|>system\n"
         prompt += "You are a helpful assistant responding in a casual, conversational tone."
 
         # Add immediate context (conversation history)
@@ -127,14 +142,14 @@ class LocalChatTester:
             for ctx in rag_context:
                 prompt += f"- {ctx}\n"
 
-        prompt += "<|eot_id|>"
+        prompt += "<|im_end|>\n"
 
         # Add user message
-        prompt += "<|start_header_id|>user<|end_header_id|>\n\n"
-        prompt += f"{user_message}<|eot_id|>"
+        prompt += "<|im_start|>user\n"
+        prompt += f"{user_message}<|im_end|>\n"
 
         # Start assistant response
-        prompt += "<|start_header_id|>assistant<|end_header_id|>\n\n"
+        prompt += "<|im_start|>assistant\n"
 
         return prompt
 
@@ -184,12 +199,15 @@ class LocalChatTester:
                 pad_token_id=self.tokenizer.eos_token_id,
             )
 
-        # Decode
-        full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Decode (keep special tokens to see what's happening)
+        full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=False)
+
+        # Debug: print what was generated
+        print(f"\n[DEBUG] Full response:\n{full_response}\n")
 
         # Extract just the assistant's response (after the prompt)
         # Find the last assistant header
-        assistant_marker = "assistant<|end_header_id|>"
+        assistant_marker = "<|im_start|>assistant"
         if assistant_marker in full_response:
             response = full_response.split(assistant_marker)[-1].strip()
         else:
@@ -197,7 +215,8 @@ class LocalChatTester:
             response = full_response[len(prompt):].strip()
 
         # Clean up any remaining template tokens
-        response = response.replace('<|eot_id|>', '').strip()
+        response = response.replace('<|im_end|>', '').strip()
+        response = response.replace('<|im_start|>', '').strip()
 
         # Calculate stats
         elapsed_time = time.time() - start_time

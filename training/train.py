@@ -55,23 +55,24 @@ def load_dataset(train_file: str, val_file: str) -> tuple:
 
 def format_chat_template(example):
     """
-    Format conversation into Llama 3.1 chat template.
+    Format conversation into Qwen 2.5 chat template.
 
-    Llama 3.1 format:
-    <|begin_of_text|><|start_header_id|>user<|end_header_id|>
-    {user message}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-    {assistant response}<|eot_id|>
+    Qwen 2.5 format:
+    <|im_start|>user
+    {user message}<|im_end|>
+    <|im_start|>assistant
+    {assistant response}<|im_end|>
     """
     conversation = example['conversations']
 
-    formatted_text = "<|begin_of_text|>"
+    formatted_text = ""
 
     for message in conversation:
         role = message['role']
         content = message['content']
 
-        formatted_text += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
-        formatted_text += f"{content}<|eot_id|>"
+        formatted_text += f"<|im_start|>{role}\n"
+        formatted_text += f"{content}<|im_end|>\n"
 
     return {'text': formatted_text}
 
@@ -223,24 +224,24 @@ def train(config: dict):
         output_dir=output_dir,
         per_device_train_batch_size=config['training']['batch_size'],
         per_device_eval_batch_size=config['training']['batch_size'],
-        gradient_accumulation_steps=2,  # Moderate accumulation for batch_size=4
-        warmup_steps=10,
+        gradient_accumulation_steps=4,  # Higher accumulation for effective batch of 16
+        warmup_steps=5,  # Reduced for speed
         num_train_epochs=config['training']['epochs'],
         learning_rate=config['training']['learning_rate'],
         fp16=use_fp16,  # Only use fp16 on CUDA, not MPS
-        logging_steps=10,
+        logging_steps=20,  # Less frequent logging
         eval_strategy="steps",
-        eval_steps=50,  # More frequent evaluation with faster model
+        eval_steps=200,  # Much less frequent evaluation for speed
         save_strategy="steps",
-        save_steps=100,  # More frequent saves
-        save_total_limit=3,  # Keep more checkpoints
+        save_steps=400,  # Less frequent saves for speed
+        save_total_limit=2,  # Keep fewer checkpoints
         optim="adamw_torch",  # Use standard PyTorch optimizer
         weight_decay=0.01,
         lr_scheduler_type="cosine",
         seed=3407,
         report_to="none",  # Disable wandb/tensorboard
         dataloader_pin_memory=False,  # Disable pin memory for MPS
-        gradient_checkpointing=True,  # Enable gradient checkpointing
+        gradient_checkpointing=False,  # Disable for speed (uses more memory but faster)
         max_grad_norm=0.3,  # Gradient clipping for stability
     )
 
