@@ -152,7 +152,8 @@ class LlamaCppInference:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=120  # 120 second timeout (2 minutes)
+                timeout=120,  # 120 second timeout (2 minutes)
+                stdin=subprocess.DEVNULL  # Close stdin - llama.cpp was waiting for input!
             )
 
             elapsed = time.time() - start_time
