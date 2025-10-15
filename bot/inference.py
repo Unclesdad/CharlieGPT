@@ -135,6 +135,8 @@ class LlamaCppInference:
             '--top-k', str(self.top_k),
             '-ngl', '0',  # Number of layers to offload to GPU (0 for CPU only)
             '--no-display-prompt',  # Don't echo the prompt
+            '-t', '4',  # Use 4 threads for faster inference on Pi 5
+            '--mlock',  # Lock model in RAM to prevent swapping
         ]
 
         try:
@@ -143,7 +145,7 @@ class LlamaCppInference:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60  # 60 second timeout
+                timeout=120  # 120 second timeout (2 minutes)
             )
 
             if result.returncode != 0:
