@@ -141,12 +141,18 @@ class LlamaCppInference:
 
         try:
             # Run inference
+            import time
+            start_time = time.time()
+
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=120  # 120 second timeout (2 minutes)
             )
+
+            elapsed = time.time() - start_time
+            print(f"  Inference took {elapsed:.1f}s")
 
             if result.returncode != 0:
                 print(f"Error running llama.cpp: {result.stderr}")

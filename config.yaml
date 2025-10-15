@@ -12,8 +12,8 @@ discord:
 model:
   name: "llama-3.1-8b-instruct"  # or "qwen-2.5-8b-instruct"
   quantization: "Q4_K_M"
-  context_length: 2048
-  max_tokens: 150
+  context_length: 1024
+  max_tokens: 75
   temperature: 0.8
   top_p: 0.9
   top_k: 40
