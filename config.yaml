@@ -21,10 +21,10 @@ model:
 # RAG Settings
 rag:
   enabled: true
-  num_contexts: 5  # Number of relevant past messages to retrieve from vector DB
+  num_contexts: 2  # Number of relevant past messages to retrieve from vector DB
   embedding_model: "all-MiniLM-L6-v2"
   similarity_threshold: 0.5
-  channel_history_limit: 10  # Number of recent messages from current channel to include as immediate context
+  channel_history_limit: 5  # Number of recent messages from current channel to include as immediate context
 
 # Training Settings (for Mac - Optimized for speed)
 training:

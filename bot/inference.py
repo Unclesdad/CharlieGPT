@@ -137,6 +137,8 @@ class LlamaCppInference:
             '--no-display-prompt',  # Don't echo the prompt
             '-t', '4',  # Use 4 threads for faster inference on Pi 5
             '--mlock',  # Lock model in RAM to prevent swapping
+            '--reverse-prompt', '<|im_end|>',  # Stop generation at this token
+            '-e',  # Process escape sequences in prompt
         ]
 
         try:
