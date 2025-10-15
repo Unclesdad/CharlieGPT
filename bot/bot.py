@@ -86,11 +86,14 @@ class CharlieGPT(commands.Bot):
 
         # Check if bot was mentioned
         if self.user.mentioned_in(message):
-            # Remove the mention from the message
-            content = message.content.replace(f'<@{self.user.id}>', '').strip()
+            # Remove the mention from the message (handle both <@ID> and <@!ID> formats)
+            content = message.content.replace(f'<@{self.user.id}>', '').replace(f'<@!{self.user.id}>', '').strip()
 
-            if content:
-                await self.generate_response(message, content)
+            # If there's no content after removing the mention, use a default prompt
+            if not content:
+                content = "Hey, what's up?"
+
+            await self.generate_response(message, content)
 
     async def get_channel_history(self, message: discord.Message, limit: int = 10) -> list[str]:
         """

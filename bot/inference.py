@@ -76,7 +76,7 @@ class LlamaCppInference:
         rag_context: Optional[List[str]] = None
     ) -> str:
         """
-        Format the prompt with Llama 3.1 chat template.
+        Format the prompt with Qwen 2.5 chat template.
 
         Args:
             user_message: The user's message
@@ -87,7 +87,7 @@ class LlamaCppInference:
             Formatted prompt string
         """
         # Start with system message
-        prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
+        prompt = "<|im_start|>system\n"
         prompt += "You are a helpful assistant responding in a casual, conversational tone."
 
         # Add immediate channel context (recent messages)
@@ -102,14 +102,13 @@ class LlamaCppInference:
             for ctx in rag_context:
                 prompt += f"- {ctx}\n"
 
-        prompt += "<|eot_id|>"
+        prompt += "<|im_end|>\n"
 
         # Add user message
-        prompt += "<|start_header_id|>user<|end_header_id|>\n\n"
-        prompt += f"{user_message}<|eot_id|>"
+        prompt += f"<|im_start|>user\n{user_message}<|im_end|>\n"
 
         # Start assistant response
-        prompt += "<|start_header_id|>assistant<|end_header_id|>\n\n"
+        prompt += "<|im_start|>assistant\n"
 
         return prompt
 
@@ -155,8 +154,8 @@ class LlamaCppInference:
 
             # Clean up the output
             # Remove any remaining template tokens
-            generated_text = generated_text.replace('<|eot_id|>', '')
-            generated_text = generated_text.replace('<|end_header_id|>', '')
+            generated_text = generated_text.replace('<|im_end|>', '')
+            generated_text = generated_text.replace('<|im_start|>', '')
 
             return generated_text.strip()
 

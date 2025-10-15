@@ -44,4 +44,4 @@ paths:
   processed_data_dir: "./processed_data"
   models_dir: "./models"
   vectordb_dir: "./vectordb"
-  llama_cpp_path: "./llama.cpp"  # Path to llama.cpp installation
+  llama_cpp_path: "~/llama.cpp/build/bin"  # Path to llama.cpp installation
