@@ -144,10 +144,13 @@ class LlamaCppInference:
             import time
             start_time = time.time()
 
+            # Debug: print the command being run
+            print(f"  Running llama.cpp with prompt length: {len(prompt)} chars")
+
             result = subprocess.run(
                 cmd,
                 capture_output=True,
-                text=Tru
+                text=True,
                 timeout=120  # 120 second timeout (2 minutes)
             )
 
