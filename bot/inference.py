@@ -146,6 +146,7 @@ class LlamaCppInference:
 
             # Debug: print the command being run
             print(f"  Running llama.cpp with prompt length: {len(prompt)} chars")
+            print(f"  Prompt preview: {prompt[:200]}...")
 
             result = subprocess.run(
                 cmd,
@@ -156,9 +157,12 @@ class LlamaCppInference:
 
             elapsed = time.time() - start_time
             print(f"  Inference took {elapsed:.1f}s")
+            print(f"  Return code: {result.returncode}")
 
             if result.returncode != 0:
-                print(f"Error running llama.cpp: {result.stderr}")
+                print(f"Error running llama.cpp:")
+                print(f"  stderr: {result.stderr[:500]}")
+                print(f"  stdout: {result.stdout[:500]}")
                 return "Sorry, I encountered an error generating a response."
 
             # Extract generated text
