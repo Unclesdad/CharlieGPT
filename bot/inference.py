@@ -182,6 +182,10 @@ class LlamaCppInference:
             if '<|im_start|>' in generated_text:
                 generated_text = generated_text.split('<|im_start|>')[0].strip()
 
+            # Remove llama.cpp interactive mode artifacts
+            if '> EOF by user' in generated_text:
+                generated_text = generated_text.split('> EOF by user')[0].strip()
+
             # Remove any remaining template tokens
             generated_text = generated_text.replace('<|im_end|>', '').replace('<|im_start|>', '').strip()
 
