@@ -61,7 +61,8 @@ def test_prompt(prompt, description):
             cmd,
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
+            stdin=subprocess.DEVNULL  # Close stdin - don't wait for input
         )
 
         elapsed = time.time() - start_time
