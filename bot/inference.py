@@ -137,8 +137,6 @@ class LlamaCppInference:
             '--no-display-prompt',  # Don't echo the prompt
             '-t', '4',  # Use 4 threads for faster inference on Pi 5
             '--mlock',  # Lock model in RAM to prevent swapping
-            '--reverse-prompt', '<|im_end|>',  # Stop generation at this token
-            '-e',  # Process escape sequences in prompt
         ]
 
         try:
@@ -174,12 +172,19 @@ class LlamaCppInference:
             print(f"  Raw output length: {len(generated_text)} chars")
             print(f"  First 200 chars: {generated_text[:200]}")
 
-            # Clean up the output
-            # Remove any remaining template tokens
-            generated_text = generated_text.replace('<|im_end|>', '')
-            generated_text = generated_text.replace('<|im_start|>', '')
+            # Clean up the output - extract only the assistant's response
+            # If the model generated the end token, split there
+            if '<|im_end|>' in generated_text:
+                generated_text = generated_text.split('<|im_end|>')[0].strip()
 
-            return generated_text.strip()
+            # If the model started generating another turn, stop there
+            if '<|im_start|>' in generated_text:
+                generated_text = generated_text.split('<|im_start|>')[0].strip()
+
+            # Remove any remaining template tokens
+            generated_text = generated_text.replace('<|im_end|>', '').replace('<|im_start|>', '').strip()
+
+            return generated_text
 
         except subprocess.TimeoutExpired:
             return "Sorry, the response took too long to generate."
