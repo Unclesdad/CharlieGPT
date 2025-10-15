@@ -147,7 +147,7 @@ class LlamaCppInference:
             result = subprocess.run(
                 cmd,
                 capture_output=True,
-                text=True,
+                text=Tru
                 timeout=120  # 120 second timeout (2 minutes)
             )
 
@@ -160,6 +160,10 @@ class LlamaCppInference:
 
             # Extract generated text
             generated_text = result.stdout.strip()
+
+            # Debug: print raw output
+            print(f"  Raw output length: {len(generated_text)} chars")
+            print(f"  First 200 chars: {generated_text[:200]}")
 
             # Clean up the output
             # Remove any remaining template tokens
