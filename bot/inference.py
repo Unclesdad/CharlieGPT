@@ -23,7 +23,8 @@ class LlamaCppInference:
     def __init__(self, config: dict):
         self.config = config
         self.model_path = self._get_model_path()
-        self.llama_cpp_path = Path(config['paths']['llama_cpp_path'])
+        # Expand ~ in the path
+        self.llama_cpp_path = Path(config['paths']['llama_cpp_path']).expanduser()
         self.main_binary = self.llama_cpp_path / 'llama-cli'
 
         # Model parameters
