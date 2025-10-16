@@ -143,8 +143,14 @@ def setup_model_and_tokenizer(config: dict):
             # Prepare model for training
             model = prepare_model_for_kbit_training(model)
         else:
-            # No quantization on Mac - use MPS (Apple GPU)
-            print("Training on Mac with MPS (Apple Silicon GPU)")
+            # Check if MPS is available (Mac) or just CPU (Pi/Linux)
+            if torch.backends.mps.is_available():
+                print("Training on Mac with MPS (Apple Silicon GPU)")
+                device = "mps"
+            else:
+                print("Training on CPU (Raspberry Pi or other CPU-only system)")
+                print("Note: This will be slow. Consider training on a GPU system.")
+                device = "cpu"
 
             # Load to CPU first to avoid MPS buffer allocation issues
             model = AutoModelForCausalLM.from_pretrained(
@@ -177,10 +183,11 @@ def setup_model_and_tokenizer(config: dict):
 
         model = get_peft_model(model, lora_config)
 
-        # Move model to MPS after LoRA is applied (much smaller memory footprint)
+        # Move model to appropriate device after LoRA is applied (much smaller memory footprint)
         if torch.backends.mps.is_available() and not torch.cuda.is_available():
             print("Moving model to MPS device...")
             model = model.to("mps")
+        # Otherwise keep on CPU (Pi doesn't need explicit move)
 
     return model, tokenizer
 
