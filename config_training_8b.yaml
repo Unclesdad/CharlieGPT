@@ -1,9 +1,9 @@
-# CharlieGPT Training Configuration for 8B Model on Raspberry Pi
+# CharlieGPT Training Configuration for 7B Model on Raspberry Pi
 # This config is for background training and doesn't affect the running bot
 
-# Training Settings (8B model - optimized for Pi background training)
+# Training Settings (7B model - optimized for Pi background training)
 training:
-  base_model: "Qwen/Qwen2.5-8B-Instruct"  # 8B model for better coherence
+  base_model: "Qwen/Qwen2.5-7B-Instruct"  # 7B model for better coherence
   output_dir: "./models/charliegpt-8b-lora"
   epochs: 1  # Single epoch to keep training time reasonable
   batch_size: 1  # Very small batch for Pi memory constraints
