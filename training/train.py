@@ -36,9 +36,9 @@ except ImportError:
     print("⚠ Unsloth not available - using standard transformers (slower but works)")
 
 
-def load_config() -> dict:
-    """Load configuration from config.yaml."""
-    with open('config.yaml', 'r') as f:
+def load_config(config_path: str = 'config.yaml') -> dict:
+    """Load configuration from config file."""
+    with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
 
@@ -298,8 +298,15 @@ def train(config: dict):
 
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Train CharlieGPT model')
+    parser.add_argument('--config', type=str, default='config.yaml',
+                        help='Path to config file (default: config.yaml)')
+    args = parser.parse_args()
+
     # Load config
-    config = load_config()
+    config = load_config(args.config)
 
     # Check if HF token is set
     hf_token = os.getenv('HF_TOKEN')
