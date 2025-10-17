@@ -9,24 +9,25 @@ CharlieGPT is a three-layer AI system that:
 2. **Retrieves** relevant context from past conversations using RAG
 3. **Generates** responses that sound like you, with awareness of conversation history
 
-The bot runs on a Raspberry Pi 5 for 24/7 availability, while training happens on a Mac for speed.
+The bot can run on any device for 24/7 availability, while training works on any system (optimized for Apple Silicon).
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Mac M3 Pro (Training)                      │
+│  Training Device (Apple Silicon optimized)  │
 │  • Process Discord exports                  │
 │  • Fine-tune 3B/7B model with LoRA          │
 │  • Export to GGUF format                    │
+│  • Works on: Mac, Windows, Linux            │
 └─────────────────────────────────────────────┘
                     ↓ Transfer model
 ┌─────────────────────────────────────────────┐
-│  Raspberry Pi 5 (Inference)                 │
+│  Deployment Device (24/7 uptime)            │
 │  • Discord bot (bot/bot.py)                 │
 │  • llama.cpp inference engine               │
 │  • ChromaDB vector database (RAG)           │
-│  • 24/7 uptime                              │
+│  • Works on: Raspberry Pi, server, cloud    │
 └─────────────────────────────────────────────┘
 ```
 
@@ -107,7 +108,7 @@ The training system expects JSON files with this structure:
 
 ## Setup
 
-### Mac Setup (Training)
+### Training Setup (Any OS)
 
 **1. Clone Repository**
 ```bash
@@ -125,6 +126,8 @@ This will:
 - Create Python virtual environment
 - Install PyTorch, Transformers, and training dependencies
 - Set up the project structure
+
+**Note**: Training works on any system but is optimized for Apple Silicon (M1/M2/M3/M4) with MPS acceleration. CUDA GPUs and CPU-only systems also supported.
 
 **3. Configure Environment**
 
@@ -163,15 +166,17 @@ training:
   lora_rank: 8
 ```
 
-Adjust settings based on your Mac's memory:
-- **16GB RAM**: Use 3B model, batch_size=4
+Adjust settings based on your system memory:
+- **8-16GB RAM**: Use 3B model, batch_size=2-4
+- **16-32GB RAM**: Use 3B model, batch_size=4-8 or 7B model, batch_size=2-4
 - **32GB+ RAM**: Use 7B model, batch_size=4-8
 
-### Raspberry Pi Setup (Deployment)
+### Deployment Setup (Raspberry Pi / Server / Cloud)
 
 **1. Install Dependencies**
 ```bash
-ssh raspi@your-pi-hostname
+# SSH into your deployment device (Raspberry Pi, server, etc.)
+ssh user@your-device-hostname
 cd ~
 git clone https://github.com/yourusername/CharlieGPT.git
 cd CharlieGPT
@@ -181,15 +186,15 @@ chmod +x setup_rpi.sh
 
 **2. Configure llama.cpp Path**
 
-Edit `config.yaml` on Pi:
+Edit `config.yaml`:
 ```yaml
 paths:
-  llama_cpp_path: "/home/raspi/llama.cpp/build/bin"  # Adjust to your path
+  llama_cpp_path: "/home/user/llama.cpp/build/bin"  # Adjust to your path
 ```
 
 **3. Set Up Environment**
 
-Create `.env` file with Discord bot credentials (same as Mac setup).
+Create `.env` file with Discord bot credentials (same as training setup).
 
 ## Training Workflow
 
@@ -225,7 +230,7 @@ python scripts/add_wpilib_docs.py
 
 ### Step 3: Train the Model
 
-On your Mac:
+On your training device:
 
 ```bash
 python training/train.py
@@ -248,9 +253,10 @@ LoRA adapters saved to: ./models/charliegpt-lora
 Merged model saved to: ./models/charliegpt-lora_merged
 ```
 
-**Expected Training Times** (Mac M3 Pro):
-- 3B model: 1-2 hours
-- 7B model: 4-8 hours
+**Expected Training Times**:
+- **Apple Silicon (M1/M2/M3/M4)**: 3B = 1-2 hours, 7B = 4-8 hours
+- **CUDA GPU (RTX 3090 / 4090)**: 3B = 30-60 min, 7B = 2-4 hours
+- **CPU-only**: 3B = 8-12 hours, 7B = 24-48 hours
 
 ### Step 4: Export to GGUF Format
 
@@ -262,17 +268,17 @@ This creates:
 - `models/charliegpt-f16.gguf` - Full precision (~6GB for 3B)
 - `models/charliegpt-Q4_K_M.gguf` - Quantized (~2GB for 3B)
 
-### Step 5: Transfer to Raspberry Pi
+### Step 5: Transfer to Deployment Device
 
 ```bash
 # Transfer quantized model
-rsync -avz --progress models/charliegpt-Q4_K_M.gguf raspi@your-pi:~/CharlieGPT/models/
+rsync -avz --progress models/charliegpt-Q4_K_M.gguf user@your-device:~/CharlieGPT/models/
 
 # Transfer vector database
-rsync -avz --progress vectordb/ raspi@your-pi:~/CharlieGPT/vectordb/
+rsync -avz --progress vectordb/ user@your-device:~/CharlieGPT/vectordb/
 
 # Transfer processed data (for rebuilding vectordb)
-rsync -avz --progress processed_data/ raspi@your-pi:~/CharlieGPT/processed_data/
+rsync -avz --progress processed_data/ user@your-device:~/CharlieGPT/processed_data/
 ```
 
 ## Discord Bot Setup
@@ -306,7 +312,7 @@ rsync -avz --progress processed_data/ raspi@your-pi:~/CharlieGPT/processed_data/
 
 ## Running the Bot
 
-### On Raspberry Pi
+### On Deployment Device
 
 **Start the bot:**
 ```bash
@@ -368,7 +374,7 @@ rag:
   channel_history_limit: 5      # Recent messages from current channel
   embedding_model: "all-MiniLM-L6-v2"
 
-# Training Settings (for Mac)
+# Training Settings
 training:
   base_model: "Qwen/Qwen2.5-3B-Instruct"
   output_dir: "./models/charliegpt-lora"
@@ -476,10 +482,12 @@ CharlieGPT/
 - Reduce max_tokens and context_length
 - Ensure no other heavy processes running
 
-**Training too slow on Mac:**
+**Training too slow:**
+- Use GPU if available (Apple Silicon MPS or CUDA)
 - Close other applications
 - Use 3B model instead of 7B
 - Reduce max_seq_length
+- Consider cloud GPU (Google Colab, RunPod, etc.)
 
 ## Tips for Best Results
 
