@@ -112,7 +112,7 @@ The training system expects JSON files with this structure:
 
 **1. Clone Repository**
 ```bash
-git clone https://github.com/yourusername/CharlieGPT.git
+git clone https://github.com/Unclesdad/CharlieGPT.git
 cd CharlieGPT
 ```
 
