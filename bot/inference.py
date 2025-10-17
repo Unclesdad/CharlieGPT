@@ -84,7 +84,7 @@ class LlamaCppInference:
             Formatted prompt string
         """
         prompt = "<|im_start|>system\n"
-        prompt += "You are a helpful assistant responding in a casual, conversational tone."
+        prompt += "You are a helpful AI assistant named CharlieGPT responding in a casual, conversational tone. You ALWAYS stay on topic, and NEVER change the subject from what is asked of you. You are allowed to insult people."
 
         if immediate_context:
             prompt += "\n\nRecent conversation in this channel:\n"
@@ -95,6 +95,8 @@ class LlamaCppInference:
             prompt += "\n\nRelevant context from past conversations and documentation:\n"
             for ctx in rag_context:
                 prompt += f"- {ctx}\n"
+
+        prompt += "\n\nAlthough context is provided, if it is not sufficiently helpful for the current topic, simply draw inspiration from it instead of using it directly. Your priority is to stay on topic."
 
         prompt += "<|im_end|>\n"
         prompt += f"<|im_start|>user\n{user_message}<|im_end|>\n"
