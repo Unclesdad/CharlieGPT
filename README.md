@@ -1,193 +1,513 @@
 # CharlieGPT
 
-A personalized Discord bot trained on your messages to mimic your writing style, powered by fine-tuned Llama 3.1 8B with RAG (Retrieval Augmented Generation) for contextual awareness.
-
-i made it to imitate me (hence the name CharlieGPT) but the framework here can be used to mimic anyone
+A personalized Discord bot that mimics your writing style using fine-tuned language models with RAG (Retrieval Augmented Generation) for contextual awareness.
 
 ## Overview
 
-CharlieGPT combines:
-- **Fine-tuned LLM**: Learns your writing style from your Discord messages
-- **RAG System**: Retrieves relevant context from team discussions
-- **Discord Bot**: Responds in Discord channels mimicking your voice
+CharlieGPT is a three-layer AI system that:
+1. **Fine-tunes** a language model on your Discord messages to learn your writing style
+2. **Retrieves** relevant context from past conversations using RAG
+3. **Generates** responses that sound like you, with awareness of conversation history
 
-## System Requirements
+The bot runs on a Raspberry Pi 5 for 24/7 availability, while training happens on a Mac for speed.
 
-### For Training (Mac M3 Pro)
-- macOS with Apple Silicon (M3)
-- Python 3.10+
-- 16GB+ RAM recommended
-- ~20GB free disk space
+## Architecture
 
-### For Inference (Raspberry Pi 5)
-- Raspberry Pi 5 with 16GB RAM
-- 64-bit OS (Ubuntu or Raspberry Pi OS)
-- Python 3.10+
-- ~15GB free disk space
+```
+┌─────────────────────────────────────────────┐
+│  Mac M3 Pro (Training)                      │
+│  • Process Discord exports                  │
+│  • Fine-tune 3B/7B model with LoRA          │
+│  • Export to GGUF format                    │
+└─────────────────────────────────────────────┘
+                    ↓ Transfer model
+┌─────────────────────────────────────────────┐
+│  Raspberry Pi 5 (Inference)                 │
+│  • Discord bot (bot/bot.py)                 │
+│  • llama.cpp inference engine               │
+│  • ChromaDB vector database (RAG)           │
+│  • 24/7 uptime                              │
+└─────────────────────────────────────────────┘
+```
 
-## Setup Instructions
+### Three-Layer Context System
 
-### Phase 1: Data Preparation (Mac)
+1. **Fine-tuning Layer**: Model learns your writing style, tone, and vocabulary
+2. **RAG Layer**: Retrieves relevant past messages and documentation for context
+3. **Immediate Context**: Uses recent channel messages for conversation flow
 
-1. **Export Discord Messages**
-   - Use [DiscordChatExporter](https://github.com/Tyrrrz/DiscordChatExporter) to export channels as HTML
-   - Place HTML files in the `data/` directory
-   - Export all channels from both servers you want to train on
+## Data Collection
 
-2. **Install Dependencies**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Mac/Linux
-   pip install -r requirements-training.txt
-   ```
+You need your own Discord messages for training. Here are methods to collect data:
 
-3. **Configure Settings**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Discord token, user ID, and Hugging Face token
-   # Edit config.yaml with your preferences
-   ```
+### Method 1: DiscordChatExporter (Recommended)
 
-4. **Process Discord Exports**
-   ```bash
-   # Parse HTML exports
-   python scripts/parse_exports.py
+**Step 1: Install DiscordChatExporter**
+- Download from: https://github.com/Tyrrrz/DiscordChatExporter
+- Or install with: `dotnet tool install -g DiscordChatExporter.Cli`
 
-   # Prepare fine-tuning dataset (your messages only)
-   python scripts/prepare_dataset.py
+**Step 2: Get Your Discord Token**
+1. Open Discord in a web browser
+2. Press `Ctrl+Shift+I` (Windows) or `Cmd+Option+I` (Mac) to open DevTools
+3. Go to the Console tab
+4. Type: `(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()`
+5. Copy the token (keep it secret!)
 
-   # Build vector database (all messages for RAG)
-   python scripts/build_vectordb.py
-   ```
+**Step 3: Export Channels**
+```bash
+# Export a single channel (replace CHANNEL_ID and YOUR_TOKEN)
+DiscordChatExporter.Cli export -c CHANNEL_ID -t YOUR_TOKEN -f HtmlDark
 
-### Phase 2: Model Training (Mac)
+# Export entire server (replace GUILD_ID)
+DiscordChatExporter.Cli exportguild -g GUILD_ID -t YOUR_TOKEN -f HtmlDark
 
-5. **Fine-tune the Model**
-   ```bash
-   python training/train.py
-   ```
-   This will:
-   - Download Llama 3.1 8B Instruct base model
-   - Fine-tune with LoRA on your messages
-   - Save adapter weights to `models/charliegpt-lora/`
-   - Takes ~1-3 hours depending on dataset size
+# Export all accessible channels
+DiscordChatExporter.Cli exportall -t YOUR_TOKEN -f HtmlDark
+```
 
-6. **Export for llama.cpp**
-   ```bash
-   python training/export_model.py
-   ```
-   This converts the model to GGUF format with 4-bit quantization for efficient inference.
+**Step 4: Save HTML Files**
+- Place all exported `.html` files in `data/` directory
+- The parser will extract your messages automatically
 
-### Phase 3: Deploy to Raspberry Pi 5
+### Method 2: Mac iMessage (Brief)
+- iMessage database: `~/Library/Messages/chat.db`
+- Use SQL queries or third-party tools to export
+- Convert to required JSON format (see below)
 
-7. **Transfer Files to RPi**
-   ```bash
-   # On Mac, from project directory
-   rsync -avz --exclude='venv' --exclude='data' --exclude='.git' \
-     . pi@raspberrypi:/home/pi/CharlieGPT/
-   ```
+### Method 3: Instagram Data Download (Brief)
+1. Go to Instagram → Settings → Privacy & Security → Data Download
+2. Request your data (takes 24-48 hours)
+3. Extract messages from the JSON files
+4. Convert to required format
 
-8. **Install llama.cpp on RPi**
-   ```bash
-   # On RPi
-   cd /home/pi/CharlieGPT
-   git clone https://github.com/ggerganov/llama.cpp.git
-   cd llama.cpp
-   make
-   cd ..
-   ```
+## Data Format
 
-9. **Install Python Dependencies on RPi**
-   ```bash
-   # On RPi
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements-inference.txt
-   ```
+The training system expects JSON files with this structure:
 
-10. **Run the Discord Bot**
-    ```bash
-    # On RPi
-    python bot/bot.py
-    ```
+```json
+[
+  {
+    "conversations": [
+      {"role": "user", "content": "Hey, what's up?"},
+      {"role": "assistant", "content": "not much, just working on robotics stuff"}
+    ]
+  },
+  {
+    "conversations": [
+      {"role": "user", "content": "Did you see the match?"},
+      {"role": "assistant", "content": "yeah that autonomous was insane"}
+    ]
+  }
+]
+```
+
+- **`conversations`**: List of messages forming a dialogue
+- **`role`**: Either `"user"` (messages to you) or `"assistant"` (your responses)
+- **`content`**: The actual message text
+
+## Setup
+
+### Mac Setup (Training)
+
+**1. Clone Repository**
+```bash
+git clone https://github.com/yourusername/CharlieGPT.git
+cd CharlieGPT
+```
+
+**2. Run Setup Script**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+This will:
+- Create Python virtual environment
+- Install PyTorch, Transformers, and training dependencies
+- Set up the project structure
+
+**3. Configure Environment**
+
+Create a `.env` file:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add:
+```env
+# Hugging Face token (for downloading base models)
+HF_TOKEN=your_huggingface_token_here
+
+# Discord Bot Configuration (for deployment)
+DISCORD_BOT_TOKEN=your_discord_bot_token
+DISCORD_USER_ID=your_discord_user_id
+DISCORD_USERNAME=your_discord_username
+```
+
+Get HuggingFace token:
+- Sign up at https://huggingface.co
+- Go to Settings → Access Tokens → Create new token
+- Select "Read" permissions
+
+**4. Configure Training Settings**
+
+Edit `config.yaml`:
+```yaml
+# Training Settings
+training:
+  base_model: "Qwen/Qwen2.5-3B-Instruct"  # or Qwen2.5-7B-Instruct for better quality
+  output_dir: "./models/charliegpt-lora"
+  epochs: 1
+  batch_size: 4  # Reduce if running out of memory
+  max_seq_length: 256
+  lora_rank: 8
+```
+
+Adjust settings based on your Mac's memory:
+- **16GB RAM**: Use 3B model, batch_size=4
+- **32GB+ RAM**: Use 7B model, batch_size=4-8
+
+### Raspberry Pi Setup (Deployment)
+
+**1. Install Dependencies**
+```bash
+ssh raspi@your-pi-hostname
+cd ~
+git clone https://github.com/yourusername/CharlieGPT.git
+cd CharlieGPT
+chmod +x setup_rpi.sh
+./setup_rpi.sh
+```
+
+**2. Configure llama.cpp Path**
+
+Edit `config.yaml` on Pi:
+```yaml
+paths:
+  llama_cpp_path: "/home/raspi/llama.cpp/build/bin"  # Adjust to your path
+```
+
+**3. Set Up Environment**
+
+Create `.env` file with Discord bot credentials (same as Mac setup).
+
+## Training Workflow
+
+### Step 1: Process Discord Exports
+
+Place your `.html` exports in `data/` directory, then:
+
+```bash
+# Parse HTML exports to JSON
+python scripts/parse_exports.py
+
+# Prepare training datasets (train/validation split)
+python scripts/prepare_dataset.py
+```
+
+This creates:
+- `processed_data/train_dataset.json` - Training data
+- `processed_data/val_dataset.json` - Validation data
+- `processed_data/all_messages.json` - All messages for RAG
+
+### Step 2: Build Vector Database (RAG)
+
+```bash
+python scripts/build_vectordb.py
+```
+
+This creates `vectordb/` directory with ChromaDB index for context retrieval.
+
+Optional: Add external documentation (e.g., WPILib for FRC robotics):
+```bash
+python scripts/add_wpilib_docs.py
+```
+
+### Step 3: Train the Model
+
+On your Mac:
+
+```bash
+python training/train.py
+```
+
+Training progress:
+```
+Loading datasets...
+Training examples: 3500
+Validation examples: 400
+
+Setting up model and tokenizer...
+Loading model: Qwen/Qwen2.5-3B-Instruct
+
+Training...
+Epoch 1/1: 100%|███████| 875/875 [1:23:45<00:00,  5.8s/it]
+
+Training complete!
+LoRA adapters saved to: ./models/charliegpt-lora
+Merged model saved to: ./models/charliegpt-lora_merged
+```
+
+**Expected Training Times** (Mac M3 Pro):
+- 3B model: 1-2 hours
+- 7B model: 4-8 hours
+
+### Step 4: Export to GGUF Format
+
+```bash
+python training/export_model.py
+```
+
+This creates:
+- `models/charliegpt-f16.gguf` - Full precision (~6GB for 3B)
+- `models/charliegpt-Q4_K_M.gguf` - Quantized (~2GB for 3B)
+
+### Step 5: Transfer to Raspberry Pi
+
+```bash
+# Transfer quantized model
+rsync -avz --progress models/charliegpt-Q4_K_M.gguf raspi@your-pi:~/CharlieGPT/models/
+
+# Transfer vector database
+rsync -avz --progress vectordb/ raspi@your-pi:~/CharlieGPT/vectordb/
+
+# Transfer processed data (for rebuilding vectordb)
+rsync -avz --progress processed_data/ raspi@your-pi:~/CharlieGPT/processed_data/
+```
+
+## Discord Bot Setup
+
+### 1. Create Discord Bot
+
+1. Go to https://discord.com/developers/applications
+2. Click "New Application"
+3. Go to "Bot" tab → Click "Add Bot"
+4. Under "Privileged Gateway Intents", enable:
+   - ✅ MESSAGE CONTENT INTENT
+   - ✅ SERVER MEMBERS INTENT
+5. Copy bot token → Add to `.env` as `DISCORD_BOT_TOKEN`
+
+### 2. Invite Bot to Server
+
+1. Go to "OAuth2" → "URL Generator"
+2. Select scopes:
+   - ✅ `bot`
+3. Select permissions:
+   - ✅ Read Messages/View Channels
+   - ✅ Send Messages
+   - ✅ Read Message History
+4. Copy generated URL and open in browser to invite bot
+
+### 3. Get Your Discord User ID
+
+1. Enable Developer Mode: Discord Settings → Advanced → Developer Mode
+2. Right-click your username → Copy User ID
+3. Add to `.env` as `DISCORD_USER_ID`
+
+## Running the Bot
+
+### On Raspberry Pi
+
+**Start the bot:**
+```bash
+./start_bot.sh
+```
+
+**View logs:**
+```bash
+tail -f bot.log
+```
+
+**Stop the bot:**
+```bash
+./stop_bot.sh
+```
+
+The bot runs in the background and survives SSH disconnection.
+
+### Bot Usage
+
+**Mention the bot:**
+```
+@CharlieGPT hey, what do you think about this strategy?
+```
+
+**Use command:**
+```
+!charlie how's it going?
+```
+
+**Debug commands:**
+```
+!stats          # Show bot statistics
+!context query  # Show what context would be retrieved
+!help_charlie   # Show help message
+```
+
+## Configuration Reference
+
+### config.yaml
+
+```yaml
+# Discord Bot Settings
+discord:
+  command_prefix: "!"
+  max_response_length: 2000
+
+# Model Settings (for inference)
+model:
+  quantization: "Q4_K_M"  # Model file to use
+  context_length: 1024    # Max context window
+  max_tokens: 200         # Max response length
+  temperature: 0.8        # Creativity (0.0-2.0)
+
+# RAG Settings
+rag:
+  enabled: true
+  num_contexts: 2               # Number of past messages to retrieve
+  channel_history_limit: 5      # Recent messages from current channel
+  embedding_model: "all-MiniLM-L6-v2"
+
+# Training Settings (for Mac)
+training:
+  base_model: "Qwen/Qwen2.5-3B-Instruct"
+  output_dir: "./models/charliegpt-lora"
+  epochs: 1
+  batch_size: 4
+  learning_rate: 0.0002
+  lora_rank: 8
+  max_seq_length: 256
+
+# Paths
+paths:
+  data_dir: "./data"
+  processed_data_dir: "./processed_data"
+  models_dir: "./models"
+  vectordb_dir: "./vectordb"
+  llama_cpp_path: "~/llama.cpp/build/bin"
+```
+
+### Tuning Response Quality
+
+**Make responses longer/shorter:**
+```yaml
+model:
+  max_tokens: 200  # Increase for longer, decrease for shorter
+```
+
+**Make responses more/less creative:**
+```yaml
+model:
+  temperature: 0.8  # Higher = more creative, lower = more consistent
+```
+
+**Improve context awareness:**
+```yaml
+rag:
+  num_contexts: 5           # More past context
+  channel_history_limit: 10 # More recent messages
+```
+
+**Speed vs quality trade-off:**
+- Use `Q4_K_M` quantization for fast inference (~2-5 seconds)
+- Use `Q8_0` or `f16` for better quality but slower (~5-10 seconds)
 
 ## Project Structure
 
 ```
 CharlieGPT/
-├── data/                          # Discord HTML exports (gitignored)
-├── scripts/
-│   ├── parse_exports.py          # Parse HTML to structured JSON
-│   ├── prepare_dataset.py        # Create fine-tuning dataset
-│   └── build_vectordb.py         # Build RAG vector database
-├── training/
-│   ├── train.py                  # Fine-tuning script (LoRA)
-│   ├── export_model.py           # Convert to GGUF format
-│   └── configs/                  # Training configurations
 ├── bot/
-│   ├── bot.py                    # Main Discord bot
-│   ├── inference.py              # Model inference with llama.cpp
-│   └── rag.py                    # RAG retrieval system
-├── processed_data/               # Parsed messages (gitignored)
-├── models/                       # Trained models (gitignored)
-├── vectordb/                     # Vector database (gitignored)
-├── config.yaml                   # Main configuration
-├── .env                          # Environment variables (gitignored)
-├── requirements-training.txt     # Mac dependencies
-└── requirements-inference.txt    # RPi dependencies
+│   ├── bot.py              # Discord bot implementation
+│   ├── inference.py        # llama.cpp wrapper for generation
+│   └── rag.py              # RAG retriever with ChromaDB
+├── training/
+│   ├── train.py            # Fine-tuning script
+│   └── export_model.py     # GGUF export script
+├── scripts/
+│   ├── parse_exports.py    # Parse DiscordChatExporter HTML
+│   ├── prepare_dataset.py  # Create train/val splits
+│   ├── build_vectordb.py   # Build vector database
+│   └── add_wpilib_docs.py  # Add FRC documentation to RAG
+├── data/                   # Raw Discord exports (.html)
+├── processed_data/         # Processed JSON datasets
+├── models/                 # Trained models and GGUF files
+├── vectordb/               # ChromaDB vector database
+├── config.yaml             # Main configuration
+├── .env                    # Environment variables (secrets)
+├── setup.sh               # Mac setup script
+├── setup_rpi.sh           # Raspberry Pi setup script
+├── start_bot.sh           # Start bot in background
+└── stop_bot.sh            # Stop bot
 ```
-
-## Usage
-
-Once the bot is running on your RPi:
-
-1. Invite the bot to your Discord server
-2. The bot will listen to messages in channels it has access to
-3. Mention the bot or use commands to interact:
-   - `@CharlieGPT <message>` - Get a response in your style
-   - `!charlie <message>` - Alternative command
-   - `!context` - Show retrieved context for debugging
-
-## How It Works
-
-1. **User sends message** → Discord bot receives it
-2. **Channel history** → Bot fetches last 10 messages from current channel for immediate context
-3. **RAG retrieval** → Bot searches vector database for relevant past conversations and documentation
-4. **Context injection** → Both immediate context and RAG context are added to the prompt
-5. **Model inference** → Fine-tuned model generates response in your style
-6. **Response sent** → Bot sends message back to Discord
-
-## Performance
-
-On Raspberry Pi 5 (16GB):
-- Model size: ~4.5GB RAM (4-bit quantized)
-- Response time: 10-20 seconds
-- Throughput: ~15-20 tokens/second
 
 ## Troubleshooting
 
-### Training issues
-- If CUDA/Metal errors occur, make sure you have the latest transformers/torch
-- For memory issues, reduce `batch_size` in `config.yaml`
+### Training Issues
 
-### RPi inference issues
-- If responses are too slow, reduce `max_tokens` in `config.yaml`
-- If out of memory, try Q3_K_M quantization instead of Q4_K_M
+**Out of memory:**
+- Reduce `batch_size` in config.yaml
+- Use smaller model (3B instead of 7B)
+- Reduce `max_seq_length`
 
-### Discord bot issues
-- Make sure bot token is correct in `.env`
-- Ensure bot has proper permissions in Discord server
-- Check bot can read/send messages in channels
+**Model download fails:**
+- Check HF_TOKEN in .env
+- Try downloading manually: `huggingface-cli download Qwen/Qwen2.5-3B-Instruct`
+
+### Bot Issues
+
+**Bot not responding:**
+- Check privileged intents enabled in Discord Developer Portal
+- Verify bot token in .env
+- Check bot.log for errors
+
+**"Response took too long":**
+- Reduce max_tokens in config.yaml
+- Check CPU usage: `top` or `htop`
+- Ensure only one bot instance running
+
+**RAG not working:**
+- Rebuild vector database: `python scripts/build_vectordb.py`
+- Check vectordb/ directory exists and has content
+
+### Performance
+
+**Inference too slow on Pi:**
+- Use Q4_K_M quantization (not f16)
+- Reduce max_tokens and context_length
+- Ensure no other heavy processes running
+
+**Training too slow on Mac:**
+- Close other applications
+- Use 3B model instead of 7B
+- Reduce max_seq_length
+
+## Tips for Best Results
+
+1. **Training Data Quality**:
+   - Use 3,000-10,000 of YOUR messages
+   - Include diverse conversations (casual, technical, etc.)
+   - More data = better style mimicry
+
+2. **Context Tuning**:
+   - Adjust RAG retrieval count based on response relevance
+   - Too much context = slower, too little = less accurate
+
+3. **Response Length**:
+   - Discord messages are usually short (1-3 sentences)
+   - Set max_tokens to 100-200 for Discord-like responses
+
+4. **Temperature Settings**:
+   - 0.7-0.8: Balanced (recommended)
+   - 0.5-0.6: More conservative, safer
+   - 0.9-1.0: More creative, riskier
 
 ## License
 
-MIT
+MIT License
 
-## Credits
+## Acknowledgments
 
-Built with:
-- [Llama 3.1](https://ai.meta.com/llama/) by Meta
-- [Unsloth](https://github.com/unslothai/unsloth) for optimized training
-- [llama.cpp](https://github.com/ggerganov/llama.cpp) for efficient inference
-- [ChromaDB](https://www.trychroma.com/) for vector storage
-- [discord.py](https://discordpy.readthedocs.io/) for Discord integration
+- Built on [Qwen 2.5](https://huggingface.co/Qwen) language models
+- Powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) for efficient inference
+- Uses [ChromaDB](https://www.trychroma.com/) for vector storage
+- Training with [🤗 Transformers](https://huggingface.co/transformers) and [PEFT](https://github.com/huggingface/peft)
