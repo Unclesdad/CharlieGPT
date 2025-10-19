@@ -106,6 +106,25 @@ class LlamaCppInference:
 
         return prompt
 
+    def _fix_encoding(self, text: str) -> str:
+        """Fix common UTF-8 encoding issues in generated text."""
+        # Common UTF-8 encoding problems
+        replacements = {
+            'â': "'",
+            'â': '"',
+            'â': '"',
+            'â': '—',
+            'â': '–',
+            'â¦': '...',
+            'Â': '',
+            'â¢': '•',
+        }
+
+        for bad, good in replacements.items():
+            text = text.replace(bad, good)
+
+        return text
+
     def generate(self, prompt: str) -> str:
         """
         Generate text using llama.cpp.
@@ -172,6 +191,9 @@ class LlamaCppInference:
                 generated_text = generated_text.split('> EOF by user')[0].strip()
 
             generated_text = generated_text.replace('<|im_end|>', '').replace('<|im_start|>', '').strip()
+
+            # Fix UTF-8 encoding issues
+            generated_text = self._fix_encoding(generated_text)
 
             return generated_text
 
