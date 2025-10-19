@@ -108,16 +108,34 @@ class LlamaCppInference:
 
     def _fix_encoding(self, text: str) -> str:
         """Fix common UTF-8 encoding issues in generated text."""
-        # Common UTF-8 encoding problems
+        # Fix double-encoded UTF-8 (common with Instagram/Discord data)
+        # These are UTF-8 smart quotes/apostrophes that got mangled
         replacements = {
-            'â': "'",
-            'â': '"',
-            'â': '"',
-            'â': '—',
-            'â': '–',
-            'â¦': '...',
-            'Â': '',
-            'â¢': '•',
+            # Smart quotes and apostrophes
+            '\u00e2\u0080\u0099': "'",  # right single quote
+            '\u00e2\u0080\u0098': "'",  # left single quote
+            '\u00e2\u0080\u009c': '"',  # left double quote
+            '\u00e2\u0080\u009d': '"',  # right double quote
+            '\u00e2\u0080\u0094': '—',  # em dash
+            '\u00e2\u0080\u0093': '–',  # en dash
+            '\u00e2\u0080\u00a6': '...',  # ellipsis
+            # Also try the visible form
+            'â\u0080\u0099': "'",
+            'â\u0080\u0098': "'",
+            'â\u0080\u009c': '"',
+            'â\u0080\u009d': '"',
+            'â\u0080\u0094': '—',
+            'â\u0080\u0093': '–',
+            'donât': "don't",
+            'theyâre': "they're",
+            'itâs': "it's",
+            'Iâm': "I'm",
+            'youâre': "you're",
+            'weâre': "we're",
+            'theyâve': "they've",
+            'wouldnât': "wouldn't",
+            'couldnât': "couldn't",
+            'shouldnât': "shouldn't",
         }
 
         for bad, good in replacements.items():
