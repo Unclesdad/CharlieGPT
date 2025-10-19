@@ -143,26 +143,22 @@ def setup_model_and_tokenizer(config: dict):
             # Prepare model for training
             model = prepare_model_for_kbit_training(model)
         else:
-            # Check if MPS is available (Mac) or just CPU (Pi/Linux)
             if torch.backends.mps.is_available():
                 print("Training on Mac with MPS (Apple Silicon GPU)")
                 device = "mps"
+                dtype = torch.bfloat16
             else:
-                print("Training on CPU (Raspberry Pi or other CPU-only system)")
-                print("Note: This will be slow. Consider training on a GPU system.")
+                print("Training on CPU")
                 device = "cpu"
+                dtype = torch.float32
 
-            # Load to CPU first to avoid MPS buffer allocation issues
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float32,  # Use float32 to match training config
+                torch_dtype=dtype,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                use_cache=False,  # Disable KV cache to save memory
+                use_cache=False,
             )
-
-            # Enable gradient checkpointing for memory efficiency
-            model.gradient_checkpointing_enable()
 
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         tokenizer.pad_token = tokenizer.eos_token
@@ -183,11 +179,10 @@ def setup_model_and_tokenizer(config: dict):
 
         model = get_peft_model(model, lora_config)
 
-        # Move model to appropriate device after LoRA is applied (much smaller memory footprint)
+        # Move model to MPS after LoRA is applied (smaller memory footprint)
         if torch.backends.mps.is_available() and not torch.cuda.is_available():
             print("Moving model to MPS device...")
             model = model.to("mps")
-        # Otherwise keep on CPU (Pi doesn't need explicit move)
 
     return model, tokenizer
 
@@ -227,29 +222,33 @@ def train(config: dict):
     # MPS doesn't support fp16 in Accelerate, only CUDA does
     use_fp16 = torch.cuda.is_available()
 
+    # Determine precision and device settings
+    use_mps = torch.backends.mps.is_available() and not torch.cuda.is_available()
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         per_device_train_batch_size=config['training']['batch_size'],
         per_device_eval_batch_size=config['training']['batch_size'],
-        gradient_accumulation_steps=4,  # Higher accumulation for effective batch of 16
-        warmup_steps=5,  # Reduced for speed
+        gradient_accumulation_steps=4,
+        warmup_steps=5,
         num_train_epochs=config['training']['epochs'],
         learning_rate=config['training']['learning_rate'],
-        fp16=use_fp16,  # Only use fp16 on CUDA, not MPS
-        logging_steps=20,  # Less frequent logging
+        fp16=use_fp16,  # Only use fp16 on CUDA
+        bf16=use_mps,  # Use bfloat16 on MPS
+        logging_steps=20,
         eval_strategy="steps",
-        eval_steps=200,  # Much less frequent evaluation for speed
+        eval_steps=200,
         save_strategy="steps",
-        save_steps=400,  # Less frequent saves for speed
-        save_total_limit=2,  # Keep fewer checkpoints
-        optim="adamw_torch",  # Use standard PyTorch optimizer
+        save_steps=400,
+        save_total_limit=2,
+        optim="adamw_torch",
         weight_decay=0.01,
         lr_scheduler_type="cosine",
         seed=3407,
-        report_to="none",  # Disable wandb/tensorboard
-        dataloader_pin_memory=False,  # Disable pin memory for MPS
-        gradient_checkpointing=False,  # Disable for speed (uses more memory but faster)
-        max_grad_norm=0.3,  # Gradient clipping for stability
+        report_to="none",
+        dataloader_pin_memory=False,  # Disable for MPS compatibility
+        gradient_checkpointing=False,  # Disabled for speed on MPS
+        max_grad_norm=0.3,
     )
 
     # Create trainer with updated API

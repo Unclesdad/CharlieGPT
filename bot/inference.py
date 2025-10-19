@@ -96,7 +96,7 @@ class LlamaCppInference:
             for ctx in rag_context:
                 prompt += f"- {ctx}\n"
 
-        prompt += "\n\nAlthough context is provided draw inspiration from it instead of using it directly. Your priority is to stay on topic."
+        prompt += "\n\nAlthough context is provided, if it is not sufficiently helpful for the current topic, simply draw inspiration from it instead of using it directly. Your priority is to stay on topic."
 
         prompt += "\n\nYou always answer the question that is asked of you, and never anything else."
 

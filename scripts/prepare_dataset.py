@@ -10,6 +10,7 @@ import os
 import random
 from pathlib import Path
 from typing import List, Dict, Tuple
+from datetime import datetime
 import yaml
 from dotenv import load_dotenv
 
@@ -37,45 +38,75 @@ def load_messages(processed_data_dir: str) -> List[Dict]:
         return json.load(f)
 
 
-def filter_user_messages(messages: List[Dict], user_id: str, username: str) -> List[Dict]:
-    """Filter messages to only include those from the specified user."""
-    user_messages = []
-
-    for msg in messages:
-        # Match by ID (preferred) or username (fallback)
-        is_user_message = (
-            (msg.get('author_id') == user_id) or
-            (msg.get('author_name') == username)
-        ) and not msg.get('is_bot', False)
-
-        if is_user_message:
-            user_messages.append(msg)
-
-    return user_messages
+def get_user_identifiers(user_id: str, username: str, instagram_username: str) -> List[str]:
+    """Get all possible identifiers for the user across platforms."""
+    identifiers = []
+    if user_id:
+        identifiers.append(user_id)
+    if username:
+        identifiers.append(username)
+    if instagram_username:
+        identifiers.append(instagram_username)
+    return identifiers
 
 
-def create_conversation_pairs(messages: List[Dict]) -> List[Tuple[str, str]]:
+def is_user_message(msg: Dict, user_identifiers: List[str]) -> bool:
+    """Check if a message is from the user."""
+    if msg.get('is_bot', False):
+        return False
+
+    # Check author_id or author_name
+    author_id = msg.get('author_id', '')
+    author_name = msg.get('author_name', '')
+
+    return author_id in user_identifiers or author_name in user_identifiers
+
+
+def is_from_2025(msg: Dict) -> bool:
+    """Check if a message is from 2025."""
+    timestamp = msg.get('timestamp')
+    if not timestamp:
+        return False
+
+    try:
+        # Parse ISO format timestamp
+        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        return dt.year == 2025
+    except (ValueError, AttributeError):
+        return False
+
+
+def create_conversation_pairs(messages: List[Dict], user_identifiers: List[str]) -> List[Tuple[str, str]]:
     """
-    Create instruction-response pairs from message sequences.
+    Create instruction-response pairs from real conversation sequences.
 
-    This looks at the context (previous messages) before each user message
-    to create realistic conversation pairs.
+    This looks at the previous messages before each user message to create
+    realistic conversation pairs with actual context.
+    Only includes messages from 2025.
     """
+    # Filter to only 2025 messages
+    messages_2025 = [msg for msg in messages if is_from_2025(msg)]
+
     # Sort messages by timestamp to ensure chronological order
-    sorted_messages = sorted(messages, key=lambda x: x.get('timestamp', ''))
+    sorted_messages = sorted(messages_2025, key=lambda x: x.get('timestamp', ''))
 
     pairs = []
-    context_window = 5  # Number of previous messages to consider
+    context_window = 2  # Number of previous messages (reduced for faster training)
 
     for i, msg in enumerate(sorted_messages):
-        if msg.get('is_bot'):
+        # Only process messages from the user
+        if not is_user_message(msg, user_identifiers):
             continue
 
-        # Get context from previous messages
+        # Get context from previous messages (3-5 messages)
         start_idx = max(0, i - context_window)
         context_messages = sorted_messages[start_idx:i]
 
-        # Build context string
+        # Skip if no context (can't learn from isolated messages)
+        if not context_messages:
+            continue
+
+        # Build context string from previous messages
         context_parts = []
         for ctx_msg in context_messages:
             author = ctx_msg.get('author_name', 'Unknown')
@@ -83,41 +114,47 @@ def create_conversation_pairs(messages: List[Dict]) -> List[Tuple[str, str]]:
             if content:
                 context_parts.append(f"{author}: {content}")
 
-        # Create instruction based on context
-        if context_parts:
-            # If there's context, make it a conversation continuation
-            context_str = "\n".join(context_parts[-3:])  # Last 3 messages
-            instruction = f"Continue this conversation:\n{context_str}\n\nYour response:"
-        else:
-            # If no context, use the message as a standalone response
-            # We'll create a generic prompt
-            instruction = "Write a message in a casual, conversational tone:"
+        # Only add if we have actual context
+        if not context_parts:
+            continue
 
+        # Create the context prompt (last 3-5 messages)
+        context_str = "\n".join(context_parts)
+        instruction = context_str
+
+        # The user's actual response
         response = msg.get('content', '').strip()
 
-        # Only add if response is substantial (not just "lol" or emojis)
-        if len(response) > 10:
+        # Add the pair (we keep all responses, including short ones like "lol" per user request)
+        if response:
             pairs.append((instruction, response))
 
     return pairs
 
 
-def create_instruct_dataset(user_messages: List[Dict]) -> List[Dict]:
-    """Create instruction-following dataset for fine-tuning."""
+def create_instruct_dataset(all_messages: List[Dict], user_identifiers: List[str]) -> List[Dict]:
+    """Create instruction-following dataset from real conversation context."""
 
-    # Group messages by channel for better context
-    channels_messages = {}
-    for msg in user_messages:
-        channel_key = f"{msg.get('guild_name', 'unknown')}_{msg.get('channel_name', 'unknown')}"
-        if channel_key not in channels_messages:
-            channels_messages[channel_key] = []
-        channels_messages[channel_key].append(msg)
+    # Group messages by conversation for better context
+    # For Discord: guild_name + channel_name
+    # For Instagram: conversation_name
+    conversations = {}
+    for msg in all_messages:
+        if msg.get('source') == 'instagram':
+            conv_key = f"instagram_{msg.get('conversation_name', 'unknown')}"
+        else:
+            # Discord message
+            conv_key = f"discord_{msg.get('guild_name', 'unknown')}_{msg.get('channel_name', 'unknown')}"
 
-    # Create conversation pairs from each channel
+        if conv_key not in conversations:
+            conversations[conv_key] = []
+        conversations[conv_key].append(msg)
+
+    # Create conversation pairs from each conversation
     all_pairs = []
-    for channel, messages in channels_messages.items():
-        if len(messages) > 0:
-            pairs = create_conversation_pairs(messages)
+    for conv_name, messages in conversations.items():
+        if len(messages) > 1:  # Need at least 2 messages for context
+            pairs = create_conversation_pairs(messages, user_identifiers)
             all_pairs.extend(pairs)
 
     # Convert to instruction format for training
@@ -127,23 +164,6 @@ def create_instruct_dataset(user_messages: List[Dict]) -> List[Dict]:
             'instruction': instruction,
             'response': response,
         })
-
-    # Also add some standalone messages with varied prompts
-    prompts = [
-        "Say something about robotics:",
-        "Share your thoughts:",
-        "What's on your mind?",
-        "Respond to this conversation:",
-        "Write a casual message:",
-    ]
-
-    for msg in user_messages:
-        content = msg.get('content', '').strip()
-        if len(content) > 15:  # Only substantial messages
-            dataset.append({
-                'instruction': random.choice(prompts),
-                'response': content,
-            })
 
     return dataset
 
@@ -191,28 +211,52 @@ def main():
     # Get user info from environment variables
     user_id = os.getenv('DISCORD_USER_ID')
     username = os.getenv('DISCORD_USERNAME')
+    instagram_username = os.getenv('INSTAGRAM_USERNAME', 'charlekerr')  # Default to charlekerr
     processed_data_dir = config['paths']['processed_data_dir']
 
-    if not user_id or not username:
-        print("Error: DISCORD_USER_ID and DISCORD_USERNAME must be set in .env file")
+    if not user_id and not username and not instagram_username:
+        print("Error: At least one of DISCORD_USER_ID, DISCORD_USERNAME, or INSTAGRAM_USERNAME must be set in .env file")
         return
 
-    print("Loading processed messages...")
+    # Get all user identifiers
+    user_identifiers = get_user_identifiers(user_id, username, instagram_username)
+    print(f"User identifiers: {user_identifiers}")
+
+    print("\nLoading processed messages...")
     all_messages = load_messages(processed_data_dir)
     print(f"Total messages loaded: {len(all_messages)}")
 
-    print(f"\nFiltering messages for user: {username} (ID: {user_id})")
-    user_messages = filter_user_messages(all_messages, user_id, username)
-    print(f"User messages found: {len(user_messages)}")
+    # Count messages by source
+    discord_count = sum(1 for msg in all_messages if msg.get('source') != 'instagram')
+    instagram_count = sum(1 for msg in all_messages if msg.get('source') == 'instagram')
+    print(f"  Discord messages: {discord_count}")
+    print(f"  Instagram messages: {instagram_count}")
 
-    if len(user_messages) == 0:
+    # Count 2025 messages
+    messages_2025 = [msg for msg in all_messages if is_from_2025(msg)]
+    print(f"\nMessages from 2025: {len(messages_2025)} ({len(messages_2025)*100//len(all_messages)}% of total)")
+    discord_2025 = sum(1 for msg in messages_2025 if msg.get('source') != 'instagram')
+    instagram_2025 = sum(1 for msg in messages_2025 if msg.get('source') == 'instagram')
+    print(f"  Discord 2025: {discord_2025}")
+    print(f"  Instagram 2025: {instagram_2025}")
+
+    # Count user messages
+    user_message_count = sum(1 for msg in all_messages if is_user_message(msg, user_identifiers))
+    print(f"\nUser messages found: {user_message_count}")
+
+    if user_message_count == 0:
         print("\n⚠️  Warning: No messages found for the specified user!")
-        print("Please check your DISCORD_USER_ID and DISCORD_USERNAME in .env file")
+        print("Please check your DISCORD_USER_ID, DISCORD_USERNAME, and INSTAGRAM_USERNAME in .env file")
         return
 
-    print("\nCreating instruction dataset...")
-    dataset = create_instruct_dataset(user_messages)
+    print("\nCreating instruction dataset from real conversation context...")
+    dataset = create_instruct_dataset(all_messages, user_identifiers)
     print(f"Created {len(dataset)} training examples")
+
+    if len(dataset) == 0:
+        print("\n⚠️  Warning: No training examples created!")
+        print("This usually means there are no messages with sufficient context.")
+        return
 
     print("\nConverting to chat format...")
     chat_dataset = create_chat_format(dataset)
