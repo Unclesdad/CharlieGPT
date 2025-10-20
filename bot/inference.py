@@ -102,7 +102,7 @@ class LlamaCppInference:
 
         return prompt
 
-    def _is_prompt_repetition(self, generated: str, user_message: str) -> bool:
+    def _is_prompt_repetition(self, generated: str) -> bool:
         """Check if the generated text is just repeating the prompt."""
         generated_lower = generated.lower()
 
@@ -119,18 +119,6 @@ class LlamaCppInference:
         for indicator in system_indicators:
             if generated_lower.startswith(indicator):
                 return True
-
-        # Check if it's just repeating the user's question
-        if len(generated) > 20:
-            # Calculate similarity (simple word overlap)
-            gen_words = set(generated_lower.split())
-            user_words = set(user_message.lower().split())
-
-            if len(gen_words) > 0:
-                overlap = len(gen_words & user_words) / len(gen_words)
-                # If more than 70% of generated words are from user message, it's likely repetition
-                if overlap > 0.7:
-                    return True
 
         return False
 
@@ -187,14 +175,10 @@ class LlamaCppInference:
             '-p', prompt,
             '-n', str(self.max_tokens),
             '-c', str(self.context_length),
-            '--temp', '0.9',  # Increased for more creativity
+            '--temp', '0.9',
             '--top-p', str(self.top_p),
-            '--top-k', '60',  # Increased for more diversity
-            '--repeat-penalty', '1.1',  # Penalize repetition
-            '--stop', '<|im_start|>',  # Stop at new turns
-            '--stop', '<|im_end|>',  # Stop at end token
-            '--stop', 'Recent conversation',  # Stop if repeating prompt
-            '--stop', 'You are CharlieGPT',  # Stop if repeating system
+            '--top-k', '60',
+            '--repeat-penalty', '1.1',
             '-ngl', '0',
             '--no-display-prompt',
             '-t', '4',
@@ -244,7 +228,7 @@ class LlamaCppInference:
             generated_text = generated_text.replace('<|im_end|>', '').replace('<|im_start|>', '').strip()
 
             # Detect prompt repetition
-            if self._is_prompt_repetition(generated_text, user_message):
+            if self._is_prompt_repetition(generated_text):
                 print("  Warning: Detected prompt repetition, returning fallback")
                 return "what"
 
