@@ -84,27 +84,55 @@ class LlamaCppInference:
             Formatted prompt string
         """
         prompt = "<|im_start|>system\n"
-        prompt += "You are a helpful AI assistant named CharlieGPT responding in a casual, conversational tone. You ALWAYS stay on topic, and NEVER change the subject from what is asked of you. You are allowed to insult people."
+        prompt += "You are CharlieGPT, a helpful AI assistant. Respond in a casual, conversational tone. You can insult people when it's funny."
 
         if immediate_context:
-            prompt += "\n\nRecent conversation in this channel [IMPORTANT, pay attention!]:\n"
+            prompt += "\n\nRecent conversation:\n"
             for msg in immediate_context:
                 prompt += f"{msg}\n"
 
         if rag_context:
-            prompt += "\n\nRelevant context from past conversations and documentation:\n"
+            prompt += "\n\nRelevant context:\n"
             for ctx in rag_context:
                 prompt += f"- {ctx}\n"
-
-        prompt += "\n\nAlthough context is provided, if it is not sufficiently helpful for the current topic, simply draw inspiration from it instead of using it directly. Your priority is to stay on topic."
-
-        prompt += "\n\nYou always answer the question that is asked of you, and never anything else."
 
         prompt += "<|im_end|>\n"
         prompt += f"<|im_start|>user\n{user_message}<|im_end|>\n"
         prompt += "<|im_start|>assistant\n"
 
         return prompt
+
+    def _is_prompt_repetition(self, generated: str, user_message: str) -> bool:
+        """Check if the generated text is just repeating the prompt."""
+        generated_lower = generated.lower()
+
+        # Check if it's repeating system prompt
+        system_indicators = [
+            'you are charliegpt',
+            'helpful ai assistant',
+            'recent conversation',
+            'relevant context',
+            'i am a helpful assistant',
+            'i am charliegpt'
+        ]
+
+        for indicator in system_indicators:
+            if generated_lower.startswith(indicator):
+                return True
+
+        # Check if it's just repeating the user's question
+        if len(generated) > 20:
+            # Calculate similarity (simple word overlap)
+            gen_words = set(generated_lower.split())
+            user_words = set(user_message.lower().split())
+
+            if len(gen_words) > 0:
+                overlap = len(gen_words & user_words) / len(gen_words)
+                # If more than 70% of generated words are from user message, it's likely repetition
+                if overlap > 0.7:
+                    return True
+
+        return False
 
     def _fix_encoding(self, text: str) -> str:
         """Fix common UTF-8 encoding issues in generated text."""
@@ -159,9 +187,14 @@ class LlamaCppInference:
             '-p', prompt,
             '-n', str(self.max_tokens),
             '-c', str(self.context_length),
-            '--temp', str(self.temperature),
+            '--temp', '0.9',  # Increased for more creativity
             '--top-p', str(self.top_p),
-            '--top-k', str(self.top_k),
+            '--top-k', '60',  # Increased for more diversity
+            '--repeat-penalty', '1.1',  # Penalize repetition
+            '--stop', '<|im_start|>',  # Stop at new turns
+            '--stop', '<|im_end|>',  # Stop at end token
+            '--stop', 'Recent conversation',  # Stop if repeating prompt
+            '--stop', 'You are CharlieGPT',  # Stop if repeating system
             '-ngl', '0',
             '--no-display-prompt',
             '-t', '4',
@@ -209,6 +242,11 @@ class LlamaCppInference:
                 generated_text = generated_text.split('> EOF by user')[0].strip()
 
             generated_text = generated_text.replace('<|im_end|>', '').replace('<|im_start|>', '').strip()
+
+            # Detect prompt repetition
+            if self._is_prompt_repetition(generated_text, user_message):
+                print("  Warning: Detected prompt repetition, returning fallback")
+                return "what"
 
             # Fix UTF-8 encoding issues
             generated_text = self._fix_encoding(generated_text)
