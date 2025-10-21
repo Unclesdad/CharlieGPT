@@ -16,5 +16,12 @@ python-dotenv>=1.0.0
 numpy>=1.24.0
 aiohttp>=3.9.0
 
+# Image generation (LCM for fast CPU inference)
+diffusers>=0.25.0
+transformers>=4.36.0
+accelerate>=0.25.0
+pillow>=10.0.0
+torch>=2.1.0
+
 # Note: llama.cpp will be compiled separately
 # Follow instructions in README.md for llama.cpp setup

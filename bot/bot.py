@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 from inference import LlamaCppInference
 from rag import RAGRetriever
+from image_generation import extract_imagine_prompt, get_generator
 
 
 # Load environment variables
@@ -162,17 +163,50 @@ class CharlieGPT(commands.Bot):
                     rag_context
                 )
 
+                # Check if response contains /imagine command
+                imagine_prompt = extract_imagine_prompt(response)
+
                 # Ensure response isn't too long for Discord
                 max_length = self.config['discord']['max_response_length']
                 if len(response) > max_length:
                     response = response[:max_length-3] + "..."
 
-                # Send response
-                await message.reply(response)
+                # Send full response (including /imagine if present)
+                sent_message = await message.reply(response)
+
+                # If /imagine was detected, generate image in background
+                if imagine_prompt:
+                    asyncio.create_task(
+                        self._generate_and_reply_image(sent_message, imagine_prompt)
+                    )
 
             except Exception as e:
                 print(f"Error generating response: {e}")
                 await message.reply("Sorry, I encountered an error generating a response.")
+
+    async def _generate_and_reply_image(self, message: discord.Message, prompt: str):
+        """
+        Generate an image and reply to the message with it.
+
+        Args:
+            message: The Discord message to reply to
+            prompt: The image generation prompt
+        """
+        try:
+            print(f"Starting image generation for prompt: {prompt}")
+
+            # Generate image in a thread (blocking operation)
+            generator = get_generator()
+            image_path = await asyncio.to_thread(generator.generate_image, prompt)
+
+            # Send the image as a reply
+            await message.reply(file=discord.File(image_path))
+
+            print(f"Image sent successfully: {image_path}")
+
+        except Exception as e:
+            print(f"Error generating image: {e}")
+            await message.reply("Sorry, I couldn't generate the image.")
 
     @commands.command(name='charlie')
     async def charlie_command(self, ctx: commands.Context, *, message: str):
