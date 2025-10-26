@@ -10,7 +10,7 @@ discord:
 
 # Model Settings
 model:
-  name: "llama-3.1-8b-instruct"  # or "qwen-2.5-8b-instruct"
+  name: "Qwen/Qwen2.5-3B-Instruct"
   quantization: "Q4_K_M"
   context_length: 1024
   max_tokens: 200
