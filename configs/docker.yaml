@@ -1,0 +1,8 @@
+# Used inside docker-compose: services reach each other by name.
+extends: default.yaml
+
+inference:
+  base_url: http://inference:8000/v1
+
+vision:
+  base_url: http://vision:8000/v1

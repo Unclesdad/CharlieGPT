@@ -1,0 +1,26 @@
+# Tiny end-to-end run on Apple Silicon: `charliegpt -c configs/smoke.yaml ...`
+extends: default.yaml
+
+paths:
+  dataset: data/dataset-smoke
+  models: models/smoke
+
+model:
+  mlx_base: mlx-community/Qwen3-0.6B-4bit
+  max_seq_length: 1024
+
+train:
+  mlx_iters: 50
+  mlx_num_layers: 4
+
+inference:
+  base_url: http://localhost:8080/v1
+  persona_model: default_model
+  helper_model: default_model
+  port: 8080
+
+vision:
+  backend: none
+
+rag:
+  enabled: false
