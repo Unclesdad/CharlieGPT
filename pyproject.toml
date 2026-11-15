@@ -53,8 +53,13 @@ packages = ["src/charliegpt"]
 
 [tool.uv]
 # Applied to every resolve (with or without extras), so a plain `uv run` can't undo them on Linux:
-# vLLM 0.11 / Unsloth break on transformers 5.x, and numba (used by vLLM) supports numpy <= 2.2.
-constraint-dependencies = ["transformers<5; sys_platform == 'linux'", "numpy<2.3; sys_platform == 'linux'"]
+# vLLM 0.11 / Unsloth break on transformers 5.x, numba (used by vLLM) supports numpy <= 2.2,
+# and vLLM 0.11 pins torch 2.8, whose matching torchao is 0.13.
+constraint-dependencies = [
+    "transformers<5; sys_platform == 'linux'",
+    "numpy<2.3; sys_platform == 'linux'",
+    "torchao<0.14; sys_platform == 'linux'",
+]
 # cuda and mlx stacks never coexist; resolve them separately.
 conflicts = [[{ extra = "cuda" }, { extra = "mlx" }]]
 
