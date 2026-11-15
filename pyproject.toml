@@ -33,9 +33,6 @@ cuda = [
     "trl>=0.18; sys_platform == 'linux'",
     "datasets>=3.0; sys_platform == 'linux'",
     "vllm>=0.9; sys_platform == 'linux'",
-    # vLLM 0.11 and Unsloth break on transformers 5.x (removed tokenizer attributes)
-    "transformers>=4.51,<5; sys_platform == 'linux'",
-    "numpy<2.3; sys_platform == 'linux'",  # numba (used by vLLM) supports numpy <= 2.2
 ]
 # Apple Silicon training + serving
 mlx = ["mlx-lm>=0.24; sys_platform == 'darwin'"]
@@ -55,6 +52,9 @@ build-backend = "hatchling.build"
 packages = ["src/charliegpt"]
 
 [tool.uv]
+# Applied to every resolve (with or without extras), so a plain `uv run` can't undo them on Linux:
+# vLLM 0.11 / Unsloth break on transformers 5.x, and numba (used by vLLM) supports numpy <= 2.2.
+constraint-dependencies = ["transformers<5; sys_platform == 'linux'", "numpy<2.3; sys_platform == 'linux'"]
 # cuda and mlx stacks never coexist; resolve them separately.
 conflicts = [[{ extra = "cuda" }, { extra = "mlx" }]]
 
