@@ -35,6 +35,7 @@ cuda = [
     "vllm>=0.9; sys_platform == 'linux'",
     # vLLM 0.11 and Unsloth break on transformers 5.x (removed tokenizer attributes)
     "transformers>=4.51,<5; sys_platform == 'linux'",
+    "numpy<2.3; sys_platform == 'linux'",  # numba (used by vLLM) supports numpy <= 2.2
 ]
 # Apple Silicon training + serving
 mlx = ["mlx-lm>=0.24; sys_platform == 'darwin'"]
