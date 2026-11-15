@@ -47,6 +47,7 @@ def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = 
         args=SFTConfig(
             output_dir=str(out_dir / "checkpoints"),
             dataset_text_field="text",
+            max_length=m.max_seq_length,  # TRL's default (1024) would cut off long contexts
             per_device_train_batch_size=t.batch_size,
             gradient_accumulation_steps=t.grad_accum,
             num_train_epochs=t.epochs,

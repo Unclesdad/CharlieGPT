@@ -29,7 +29,7 @@ vision = [
 ]
 # RTX 3090 training + serving (Ubuntu)
 cuda = [
-    "unsloth>=2025.6.1; sys_platform == 'linux'",
+    "unsloth>=2025.10; sys_platform == 'linux'",  # older releases import things TRL >= 0.20 removed
     "trl>=0.18; sys_platform == 'linux'",
     "datasets>=3.0; sys_platform == 'linux'",
     "vllm>=0.9; sys_platform == 'linux'",

@@ -438,7 +438,8 @@ vision = [
     { name = "pillow-heif" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "torch", version = "2.15.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
 ]
 
 [package.metadata]
@@ -467,7 +468,7 @@ requires-dist = [
     { name = "transformers", marker = "sys_platform == 'linux' and extra == 'vision'", specifier = ">=4.49" },
     { name = "trl", marker = "sys_platform == 'linux' and extra == 'cuda'", specifier = ">=0.18" },
     { name = "typer", specifier = ">=0.12" },
-    { name = "unsloth", marker = "sys_platform == 'linux' and extra == 'cuda'", specifier = ">=2025.6.1" },
+    { name = "unsloth", marker = "sys_platform == 'linux' and extra == 'cuda'", specifier = ">=2025.10" },
     { name = "vllm", marker = "sys_platform == 'linux' and extra == 'cuda'", specifier = ">=0.9" },
 ]
 provides-extras = ["rag", "vision", "cuda", "mlx", "discord", "imessage", "instagram", "dev"]
@@ -564,7 +565,7 @@ dependencies = [
     { name = "frozendict", marker = "sys_platform == 'linux'" },
     { name = "pydantic", version = "2.14.3", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b8/99/3fdabfc95609d6efdf02fa7f1ed0245524cb1209d3d4a17109d3205d2eed/compressed_tensors-0.11.0.tar.gz", hash = "sha256:95ddf19699f775df6494dd864e5f52e8a24f8015496520190c1a22c6cfc44b1f", size = 187566, upload-time = "2025-08-19T18:59:31.854Z" }
 wheels = [
@@ -3012,7 +3013,7 @@ dependencies = [
     { name = "safetensors", marker = "sys_platform == 'linux'" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
     { name = "tqdm", marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/78/06/f0b47d14da0d4b350b224b031b8e819c188414d4aa550dbee4dca601bb67/peft-0.21.3.tar.gz", hash = "sha256:1fb60533dc417aebd39edb648856530c09419a5027ca0c3ce090d82e82a9c41f", size = 982967, upload-time = "2026-11-13T10:04:55.914Z" }
 wheels = [
@@ -4285,7 +4286,8 @@ dependencies = [
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "torch", version = "2.15.0", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "tqdm", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "typing-extensions", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9d/59/867381b1414a975da6c9953f48a07c05cb0629305e2d37c9bcc9764367b2/sentence_transformers-5.7.0.tar.gz", hash = "sha256:fd8c8fc35e6323631dff9f3760969ebf7980dc3cfda0ab1354bc6a774cc0e5d8", size = 466382, upload-time = "2026-08-06T12:12:33.371Z" }
@@ -5037,6 +5039,15 @@ wheels = [
 ]
 
 [[package]]
+name = "torchao"
+version = "0.18.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/55/ed9ad98f0f09d5a1124d09830043d13a39e63539f9590d2bdb6d71cbc4a4/torchao-0.18.0-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6540b148e40ba81cbd4de86392225a076a1591146e9cebb099b3b234ba9feebe", size = 3372585, upload-time = "2026-08-03T19:43:10.993Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/4d/485477bb8f05bd501016059c6d8abd742f830cb1b24ab7704e086c7cc35a/torchao-0.18.0-py3-none-any.whl", hash = "sha256:5c2b4485341bf28b7fed2c4fc95b9f298e209f41685350f067de85527a05585e", size = 1369798, upload-time = "2026-08-03T19:43:12.649Z" },
+]
+
+[[package]]
 name = "torchaudio"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5088,33 +5099,53 @@ wheels = [
 
 [[package]]
 name = "transformers"
+version = "4.57.2"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and platform_machine != 's390x' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine == 's390x' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and platform_machine == 's390x' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine != 's390x' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and platform_machine != 's390x' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "filelock", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "packaging", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "pyyaml", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "regex", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "requests", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "safetensors", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "tokenizers", version = "0.22.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "tqdm", marker = "(sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/98/cf2515dba32791abe0540a252ccae7dc4f12fdeb03258182b6f014a78360/transformers-4.57.2.tar.gz", hash = "sha256:172a455ad5a570ecad89bea510a6c924c45fa90e46e859225fac07305d7946fc", size = 10141231, upload-time = "2025-11-24T17:54:14.293Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d3/21/15c69470cf94857d4664e74554fa01248eb57428fed831929405a0a63b0a/transformers-4.57.2-py3-none-any.whl", hash = "sha256:0918df354853c9931a637792cec519e137aceb150effd4c7924d6b8d36918fab", size = 11993097, upload-time = "2025-11-24T17:54:10.472Z" },
+]
+
+[[package]]
+name = "transformers"
 version = "4.57.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.12' and platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version < '3.11.5' and platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version < '3.11.5' and platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.12' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
-    "python_full_version < '3.11.5' and sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda' and extra != 'extra-10-charliegpt-mlx'",
+    "python_full_version >= '3.12' and sys_platform == 'linux'",
+    "python_full_version >= '3.11.5' and python_full_version < '3.12' and sys_platform == 'linux'",
+    "python_full_version < '3.11.5' and sys_platform == 'linux'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "packaging", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "pyyaml", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "regex", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "requests", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "safetensors", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "tokenizers", version = "0.22.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "tqdm", marker = "sys_platform == 'linux' or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "filelock", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "packaging", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "pyyaml", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "regex", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "requests", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "safetensors", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "tokenizers", version = "0.22.2", source = { registry = "https://pypi.org/simple" }, marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "tqdm", marker = "(sys_platform == 'linux' and extra != 'extra-10-charliegpt-cuda') or (extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c4/35/67252acc1b929dc88b6602e8c4a982e64f31e733b804c14bc24b47da35e6/transformers-4.57.6.tar.gz", hash = "sha256:55e44126ece9dc0a291521b7e5492b572e6ef2766338a610b9ab5afbb70689d3", size = 10134912, upload-time = "2026-01-16T10:38:39.284Z" }
 wheels = [
@@ -5248,25 +5279,16 @@ wheels = [
 
 [[package]]
 name = "trl"
-version = "1.18.0"
+version = "0.23.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "accelerate", marker = "sys_platform == 'linux'" },
     { name = "datasets", version = "5.0.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "jinja2", marker = "sys_platform == 'linux'" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "packaging", marker = "sys_platform == 'linux'" },
-    { name = "pandas", marker = "sys_platform == 'linux'" },
-    { name = "psutil", marker = "sys_platform == 'linux'" },
-    { name = "pyarrow", marker = "sys_platform == 'linux'" },
-    { name = "pyyaml", marker = "sys_platform == 'linux'" },
-    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/fd/9b863dfe842df5a489c5c475674e00c57fc405e7df318fcd3d81530fbcc9/trl-1.18.0.tar.gz", hash = "sha256:68dc10a3bcb6bb1fc336e6926752b36ef2943ab049d75a52f12bb83650c25126", size = 840052, upload-time = "2026-11-13T15:20:02.779Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/18/c18e27f6156cf961791ca7abcd4ee5fc8c5ae0fbb936c59827852ee118f5/trl-0.23.0.tar.gz", hash = "sha256:abfe0ecfa6b7e46022552b9dd0cc288bf2c4ef19364ce7765d10218b62b618f1", size = 515765, upload-time = "2025-09-10T04:16:42.377Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/07/979b45b2be02088ac832348d1978f53152234c60c7773cd721c5b0b3ecd9/trl-1.18.0-py3-none-any.whl", hash = "sha256:15bfd33bb5f0139a2596159b0e1dd4d89bce6097f02527ef3a35656124bd0cf3", size = 1065446, upload-time = "2026-11-13T15:20:01.312Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/81/035cace9b8853df794db0499299273abef30de889602587efa2a95c7dccb/trl-0.23.0-py3-none-any.whl", hash = "sha256:bb8f35a6a1531bad2d52032add29380413bd9b032d133ab6df16d2191f14f9e6", size = 564734, upload-time = "2025-09-10T04:16:40.34Z" },
 ]
 
 [[package]]
@@ -5353,7 +5375,7 @@ wheels = [
 
 [[package]]
 name = "unsloth"
-version = "2025.7.2"
+version = "2025.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "accelerate", marker = "sys_platform == 'linux'" },
@@ -5371,29 +5393,29 @@ dependencies = [
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
     { name = "torchvision", marker = "sys_platform == 'linux'" },
     { name = "tqdm", marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "triton", version = "3.4.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (platform_machine == 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "triton", version = "3.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "triton", version = "3.4.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 's390x' and sys_platform == 'linux' and 'linux' in sys_platform and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and 'linux' not in sys_platform and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (platform_machine == 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "triton", version = "3.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine == 's390x' and sys_platform == 'linux' and 'linux' in sys_platform and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or ('linux' not in sys_platform and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "trl", marker = "sys_platform == 'linux'" },
     { name = "tyro", marker = "sys_platform == 'linux'" },
     { name = "unsloth-zoo", marker = "sys_platform == 'linux'" },
     { name = "wheel", marker = "sys_platform == 'linux'" },
-    { name = "xformers", version = "0.0.32.post1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and platform_machine == 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (python_full_version < '3.12' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "xformers", version = "0.0.32.post2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (python_full_version < '3.12' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (platform_machine != 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "xformers", marker = "(platform_machine == 'AMD64' and sys_platform == 'linux' and 'linux' in sys_platform) or (platform_machine == 'x86_64' and sys_platform == 'linux' and 'linux' in sys_platform)" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/dc/469cbf7f4664edb412abbbcd2099e79ee90b1bb9121cbd0c8e502a1d68e4/unsloth-2025.7.2.tar.gz", hash = "sha256:a5eea1bc83df47d05835fb25fd35640ccdde94c4b5f0b397e79e372e5ad3e394", size = 255028, upload-time = "2025-07-10T14:05:22.538Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/85/d3adac4a02021ffd08c0fd0cc4214a5f98647c139ec3a1ee9ad5722093ee/unsloth-2025.11.1.tar.gz", hash = "sha256:c06a1003484fd2c5dbd00752d7f2490de489df348ac129bb6a83364c125f3dc4", size = 4744603, upload-time = "2025-11-03T14:49:41.128Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/fb/28cb7ddbfcdb07c019668015fcc274620934a302973ebfdcd3b716010866/unsloth-2025.7.2-py3-none-any.whl", hash = "sha256:5eeb112ac6d26c3512b353595391a575ba631a13df3a216168932f76c628bc86", size = 297518, upload-time = "2025-07-10T14:05:18.116Z" },
+    { url = "https://files.pythonhosted.org/packages/51/09/e52c139f75ba2bd2fed3834238fcdaf5ae5f38f168a8f68d5ab052fa09fb/unsloth-2025.11.1-py3-none-any.whl", hash = "sha256:67ab663e4f89817647ee343bffb400eeca3a1725470bbfc1509ef2c42ef0f418", size = 348780, upload-time = "2025-11-03T14:49:37.91Z" },
 ]
 
 [[package]]
 name = "unsloth-zoo"
-version = "2025.7.4"
+version = "2025.11.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "accelerate", marker = "sys_platform == 'linux'" },
     { name = "cut-cross-entropy", marker = "sys_platform == 'linux'" },
     { name = "datasets", version = "5.0.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "filelock", marker = "sys_platform == 'linux'" },
     { name = "hf-transfer", marker = "sys_platform == 'linux'" },
     { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
     { name = "msgspec", marker = "sys_platform == 'linux'" },
@@ -5406,18 +5428,19 @@ dependencies = [
     { name = "regex", marker = "sys_platform == 'linux'" },
     { name = "sentencepiece", marker = "sys_platform == 'linux'" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "torchao", marker = "sys_platform == 'linux'" },
     { name = "tqdm", marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
-    { name = "triton", version = "3.4.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (platform_machine == 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
-    { name = "triton", version = "3.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine == 's390x' and sys_platform == 'linux' and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "triton", version = "3.4.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 's390x' and sys_platform == 'linux' and 'linux' in sys_platform and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and 'linux' not in sys_platform and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (platform_machine == 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
+    { name = "triton", version = "3.9.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine == 's390x' and sys_platform == 'linux' and 'linux' in sys_platform and extra == 'extra-10-charliegpt-cuda') or (platform_machine != 's390x' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or (sys_platform != 'linux' and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx') or ('linux' not in sys_platform and extra == 'extra-10-charliegpt-cuda' and extra == 'extra-10-charliegpt-mlx')" },
     { name = "trl", marker = "sys_platform == 'linux'" },
     { name = "typing-extensions", marker = "sys_platform == 'linux'" },
     { name = "tyro", marker = "sys_platform == 'linux'" },
     { name = "wheel", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/12/dcc576af80471499da95e7b87ea815e875e3af4e6e4bdcd3a7ed479b0dad/unsloth_zoo-2025.7.4.tar.gz", hash = "sha256:c5caf0f79ba2d70e1c81ca7b4030d81bab480622bab62cc47f100f19a216e8dc", size = 144670, upload-time = "2025-07-10T16:07:13.913Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/9c/6918f568ae91b1c2e56d3820784e538fe39acbc0b3a86f5ae9c25b8245c3/unsloth_zoo-2025.11.2.tar.gz", hash = "sha256:7cfc1b76c1abc6f7e41ef84648dd923fbd92b38ed0e1272562356ad9a7f7acc3", size = 259407, upload-time = "2025-11-06T13:48:12.231Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/41/e7d3084e127c814e5ab49ae872abd103c6268776df8aab482bcfe2daa4b2/unsloth_zoo-2025.7.4-py3-none-any.whl", hash = "sha256:1d8a10095d14d998bb453a8557fe1357a8ed4ed93e566a95786cb4b2ec94369b", size = 162770, upload-time = "2025-07-10T16:07:12.399Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/c4/5971b0bf52885021da67af1879a8db7d7c3dcd7d576cf1e58fda462d575f/unsloth_zoo-2025.11.2-py3-none-any.whl", hash = "sha256:eba103c75e00439cc19b33ca0319e018dae43ecd414fc1c39981e75a4b2cdf4d", size = 278200, upload-time = "2025-11-06T13:48:10.42Z" },
 ]
 
 [[package]]
@@ -5528,10 +5551,10 @@ dependencies = [
     { name = "torchaudio", marker = "sys_platform == 'linux'" },
     { name = "torchvision", marker = "sys_platform == 'linux'" },
     { name = "tqdm", marker = "sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'linux'" },
     { name = "typing-extensions", marker = "sys_platform == 'linux'" },
     { name = "watchfiles", marker = "sys_platform == 'linux'" },
-    { name = "xformers", version = "0.0.32.post1", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "xformers", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "xgrammar", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'arm64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/82/5a/36d2351206f4d8d871b10780f874d03957985e08298d430cc837723e07af/vllm-0.11.0.tar.gz", hash = "sha256:f435a64c24e9c4178d657a76f8edd8548ddc444012f7d06a9f79ac3a6392bfae", size = 10822208, upload-time = "2025-10-04T01:39:57.798Z" }
@@ -5646,38 +5669,14 @@ wheels = [
 name = "xformers"
 version = "0.0.32.post1"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.12' and platform_machine != 's390x' and sys_platform == 'linux'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine == 's390x' and sys_platform == 'linux'",
-    "python_full_version < '3.11.5' and platform_machine == 's390x' and sys_platform == 'linux'",
-    "python_full_version >= '3.11.5' and python_full_version < '3.12' and platform_machine != 's390x' and sys_platform == 'linux'",
-    "python_full_version < '3.11.5' and platform_machine != 's390x' and sys_platform == 'linux'",
-]
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and sys_platform == 'linux') or (platform_machine != 's390x' and sys_platform == 'linux')" },
-    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and sys_platform == 'linux') or (platform_machine != 's390x' and sys_platform == 'linux')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
+    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6f/33/3b9c4d3d5b2da453d27de891df4ad653ac5795324961aa3a5c15b0353fe6/xformers-0.0.32.post1.tar.gz", hash = "sha256:1de84a45c497c8d92326986508d81f4b0a8c6be4d3d62a29b8ad6048a6ab51e1", size = 12106196, upload-time = "2025-08-14T18:07:45.486Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6b/df/6817346f1a77278315d5fe1fc9f239ba3282ba36e8ab3256babd448dde62/xformers-0.0.32.post1-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:5f245b5555188da112070d8fefb6b7ae1ae47422856521d66c837e9d2352fbe4", size = 117199943, upload-time = "2025-08-14T18:07:34.78Z" },
     { url = "https://files.pythonhosted.org/packages/91/70/7dee5a786d77a63cf20dac60c38086bd2202d59ae89c8acef0ef6331c374/xformers-0.0.32.post1-cp39-abi3-win_amd64.whl", hash = "sha256:feb452bc2c8731da1c5d0e2e4536ba95bb214f77b41e91f24443c74d6f98a126", size = 100221531, upload-time = "2025-08-14T18:07:41.112Z" },
-]
-
-[[package]]
-name = "xformers"
-version = "0.0.32.post2"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux'" },
-    { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' and platform_machine == 's390x' and sys_platform == 'linux'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/47/99/68d2e7a17b65a08180d6b120d1d293d5855a0c5999cb30a79fb466b49642/xformers-0.0.32.post2.tar.gz", hash = "sha256:9538be803969c6e1ca16a3ece921e472c24f79970b10be1087a389dcb66e412a", size = 12105990, upload-time = "2025-08-15T11:48:56.584Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/16/4ed2fbf7c20ba20565d9a1fc544c2bef39d409c8eca1949654c6ff9f8452/xformers-0.0.32.post2-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:3d1fefe0006eb00a730b3b197ff41aab085f1209b50419baab6152445f09e508", size = 117196673, upload-time = "2025-08-15T11:48:46.726Z" },
-    { url = "https://files.pythonhosted.org/packages/50/19/ea64609a535f87a44cb177dc37c6d6a58f6d540adfff819d565fb0657cf7/xformers-0.0.32.post2-cp39-abi3-win_amd64.whl", hash = "sha256:87fa13f4b406ed640554cea6687d0020b496bd6b446ca17d24f9438a079e6f09", size = 100221079, upload-time = "2025-08-15T11:48:53.234Z" },
 ]
 
 [[package]]
@@ -5689,7 +5688,7 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
     { name = "pydantic", version = "2.14.3", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
-    { name = "transformers", version = "4.57.6", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
+    { name = "transformers", version = "4.57.2", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
     { name = "triton", version = "3.4.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "typing-extensions", marker = "platform_machine != 's390x' and sys_platform == 'linux'" },
 ]
