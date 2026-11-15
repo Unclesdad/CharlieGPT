@@ -3,12 +3,18 @@
 identity:
   name: Charlie
   aliases: [charlie]            # mentioning any of these in a group chat triggers a reply
-  discord_user_ids: []          # your Discord user id(s), so exports know which messages are yours
-  instagram_name: ""            # your display name exactly as it appears in the Instagram export
-  contacts: {}                  # "+15551234567": "Alex"   (iMessage handles -> names)
+  discord_user_ids: ["395199310104363009"]   # your Discord user id(s) or username(s)
+  instagram_name: charlie       # your display name exactly as it appears in the Instagram export
+  contacts: {}                  # "+15551234567": "Alex"   overrides the vCard
+  contacts_vcf: null            # default: first *.vcf in data/messages
 
 paths:
-  processed: data/processed
+  # raw exports, one folder per source
+  messages: data/messages       # imessage-exporter HTML + contacts .vcf
+  discord: data/discord         # DiscordChatExporter JSON
+  instagram: data/instagram     # unzipped Instagram export
+  # uniform-format output
+  processed: features
   dataset: data/dataset
   memory: data/memory
   captions: data/memory/captions.json

@@ -17,14 +17,21 @@ class Identity(BaseModel):
     name: str = "Charlie"
     # Words that count as "talking to me" in group chats.
     aliases: list[str] = Field(default_factory=lambda: ["charlie"])
-    discord_user_ids: list[str] = Field(default_factory=list)
+    discord_user_ids: list[str] = Field(default_factory=list)  # your user id(s) or username(s)
     instagram_name: str = ""
-    # handle/user id -> display name (phone numbers, emails, usernames)
+    # handle/user id -> display name (phone numbers, emails, usernames); overrides the vCard
     contacts: dict[str, str] = Field(default_factory=dict)
+    # Contacts export; default: the first *.vcf in paths.messages
+    contacts_vcf: Path | None = None
 
 
 class Paths(BaseModel):
-    processed: Path = Path("data/processed")
+    # Raw exports, one folder per source; each parser only reads its own folder.
+    messages: Path = Path("data/messages")  # imessage-exporter HTML + a contacts .vcf
+    discord: Path = Path("data/discord")  # DiscordChatExporter JSON
+    instagram: Path = Path("data/instagram")  # unzipped Instagram export
+    # Uniform-format output (one JSONL per source).
+    processed: Path = Path("features")
     dataset: Path = Path("data/dataset")
     memory: Path = Path("data/memory")
     captions: Path = Path("data/memory/captions.json")

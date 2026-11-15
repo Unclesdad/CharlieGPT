@@ -1,6 +1,7 @@
 # Your messages, models and secrets never go in git.
 .env
 data/
+features/
 processed_data/
 models/
 state/

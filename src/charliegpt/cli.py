@@ -57,34 +57,67 @@ def _save(settings: Settings, platform: Platform, convs) -> None:
 
 
 @ingest_app.command("imessage")
-def ingest_imessage(ctx: typer.Context, db: Optional[Path] = typer.Option(None, help="Path to chat.db (default from config)")):
-    """Read iMessage history straight from chat.db (grant your terminal Full Disk Access)."""
-    from charliegpt.ingest.imessage import IMessageParser
+def ingest_imessage(
+    ctx: typer.Context,
+    path: Optional[Path] = typer.Argument(None, help="imessage-exporter HTML folder (default: paths.messages)"),
+    from_db: bool = typer.Option(False, "--from-db", help="Read ~/Library/Messages/chat.db directly instead (needs Full Disk Access)"),
+):
+    """Parse iMessage: imessage-exporter HTML in data/messages (contacts from the .vcf there)."""
+    from charliegpt.ingest.vcard import contacts_for
 
     s = S(ctx)
-    _save(s, Platform.imessage, IMessageParser(db or s.imessage.db_path, s.identity.contacts, s.identity.name).parse())
+    contacts = contacts_for(s)
+    console.print(f"[dim]{len(contacts)} contact handles loaded[/]")
+    if from_db:
+        from charliegpt.ingest.imessage import IMessageParser
+
+        _save(s, Platform.imessage, IMessageParser(s.imessage.db_path, contacts, s.identity.name).parse())
+        return
+    from charliegpt.ingest.imessage_html import IMessageHTMLParser
+
+    _save(s, Platform.imessage, IMessageHTMLParser(path or s.paths.messages, contacts, s.identity.name).parse())
 
 
 @ingest_app.command("discord")
-def ingest_discord(ctx: typer.Context, path: Path = typer.Argument(..., help="DiscordChatExporter JSON file or folder")):
-    """Parse DiscordChatExporter JSON exports."""
+def ingest_discord(ctx: typer.Context, path: Optional[Path] = typer.Argument(None, help="DiscordChatExporter JSON (default: paths.discord)")):
+    """Parse DiscordChatExporter exports (JSON or HTML) in data/discord; skips channels you never posted in."""
     from charliegpt.ingest.discord import DiscordParser
 
     s = S(ctx)
     if not s.identity.discord_user_ids:
         console.print("[yellow]identity.discord_user_ids is empty: none of the messages will count as yours.[/]")
-    _save(s, Platform.discord, DiscordParser(path, s.identity.discord_user_ids, s.identity.name).parse())
+    parser = DiscordParser(path or s.paths.discord, s.identity.discord_user_ids, s.identity.name)
+    _save(s, Platform.discord, parser.parse())
+    if parser.skipped:
+        console.print(f"[dim]skipped {len(parser.skipped)} channels you never posted in[/]")
 
 
 @ingest_app.command("instagram")
-def ingest_instagram(ctx: typer.Context, path: Path = typer.Argument(..., help="Unzipped Instagram data export folder")):
-    """Parse Instagram 'Download your information' JSON."""
+def ingest_instagram(ctx: typer.Context, path: Optional[Path] = typer.Argument(None, help="Unzipped Instagram export (default: paths.instagram)")):
+    """Parse the Instagram 'Download your information' JSON in data/instagram."""
     from charliegpt.ingest.instagram import InstagramParser
 
     s = S(ctx)
     if not s.identity.instagram_name:
         console.print("[yellow]identity.instagram_name is empty: none of the messages will count as yours.[/]")
-    _save(s, Platform.instagram, InstagramParser(path, s.identity.instagram_name, s.identity.name).parse())
+    _save(s, Platform.instagram, InstagramParser(path or s.paths.instagram, s.identity.instagram_name, s.identity.name).parse())
+
+
+@ingest_app.command("all")
+def ingest_all(ctx: typer.Context):
+    """Parse every source folder that has files in it."""
+    s = S(ctx)
+    sources = [
+        (s.paths.messages, lambda: ingest_imessage(ctx, path=None, from_db=False)),
+        (s.paths.discord, lambda: ingest_discord(ctx, path=None)),
+        (s.paths.instagram, lambda: ingest_instagram(ctx, path=None)),
+    ]
+    for folder, run in sources:
+        if folder.is_dir() and any(folder.iterdir()):
+            console.print(f"[bold]{folder}[/]")
+            run()
+        else:
+            console.print(f"[dim]{folder}: empty, skipped[/]")
 
 
 @app.command()
@@ -313,7 +346,10 @@ def status(ctx: typer.Context):
     console.print(f"kill switch: {'[red]PAUSED[/]' if k.paused else '[green]running[/]'}")
     console.print(f"device: {detect_device()}")
     for label, p in [
-        ("processed", s.paths.processed),
+        ("messages", s.paths.messages),
+        ("discord", s.paths.discord),
+        ("instagram", s.paths.instagram),
+        ("features", s.paths.processed),
         ("dataset", s.paths.dataset / "train.jsonl"),
         ("rag index", s.paths.memory / "rag" / "vectors.npy"),
         ("profiles", s.paths.memory / "profiles.json"),

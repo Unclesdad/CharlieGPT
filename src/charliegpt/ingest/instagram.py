@@ -1,6 +1,8 @@
 """Instagram: Meta "Download your information" export in JSON format.
 
-Files live at `[your_instagram_activity/]messages/inbox/<thread>/message_<n>.json`.
+Each thread is a folder with message_1.json (message_2.json, … for long chats) plus photos/,
+videos/, audio/. Thread folders can sit anywhere under the root: the full export nests them in
+`your_instagram_activity/messages/inbox/`, or they can be copied straight into data/instagram/.
 """
 
 from __future__ import annotations
@@ -15,11 +17,24 @@ from typing import Iterable
 from charliegpt.ingest.base import URL_RE, fix_mojibake
 from charliegpt.schema import Attachment, AttachmentKind, Conversation, Message, Participant, Platform, Reaction
 
-# Auto-generated texts that aren't really messages.
+# Auto-generated texts that aren't really messages (matched after stripping whitespace).
 SYSTEM_TEXT = re.compile(
-    r"^(Liked a message|Reacted .+ to your message|.+ sent an attachment\.|.+ shared a story\.|"
-    r"You sent an attachment\.|.+ started a video chat|Video chat ended|.+ named the group .+|"
-    r".+ added .+ to the group\.|.+ left the group\.|.+ changed the theme .+)$"
+    r"^(?:"
+    r"(?:.+ )?[Ll]iked a message"
+    r"|(?:.+ )?[Rr]eacted .+ to your message"
+    r"|.+ sent an attachment\."
+    r"|.+ shared a story\."
+    r"|.+ (?:added .+ to|removed .+ from|joined|left) the group\."
+    r"|.+ created the group(?: chat)?\."
+    r"|.+ (?:named the group|(?:changed|removed) the group (?:name|photo)|changed the theme|set the (?:quick reaction|emoji)).*"
+    r"|.+ set (?:their|your|the) .*nickname.*"
+    r"|.+ (?:started|joined) (?:an audio call|a video chat)"
+    r"|You missed (?:an audio call|a video chat)"
+    r"|(?:Audio call|Video chat) (?:started|ended)"
+    r"|.+ (?:unsent|pinned) a message\.?"
+    r"|This poll is no longer available\.?"
+    r"|.+ (?:voted for|changed (?:their|your) vote to) .+ in the poll\.?"
+    r")$"
 )
 
 
@@ -36,19 +51,22 @@ class InstagramParser:
     def parse(self) -> Iterable[Conversation]:
         threads: dict[Path, list[Path]] = defaultdict(list)
         for f in self.root.rglob("message_*.json"):
-            if "inbox" in f.parts or "message_requests" in f.parts:
-                threads[f.parent].append(f)
+            threads[f.parent].append(f)
         for folder, files in sorted(threads.items()):
             conv = self._thread(folder, sorted(files))
             if conv.messages:
                 yield conv
 
-    def _media(self, uri: str | None) -> str | None:
+    def _media(self, uri: str | None, folder: Path) -> str | None:
+        """uris are relative to the original export root ("your_instagram_activity/messages/inbox/<thread>/photos/123"),
+        which may no longer exist if threads were moved; anchor on the thread folder name instead."""
         if not uri:
             return None
-        # uris are relative to the export root (e.g. "your_instagram_activity/messages/inbox/.../photos/x.jpg")
-        for base in (self.root, *self.root.parents):
-            p = base / uri
+        parts = Path(uri).parts
+        candidates = [self.root / uri]
+        if folder.name in parts:
+            candidates.append(folder.joinpath(*parts[parts.index(folder.name) + 1 :]))
+        for p in candidates:
             if p.exists():
                 return str(p)
         return None
@@ -69,15 +87,18 @@ class InstagramParser:
         messages: list[Message] = []
         for i, m in enumerate(sorted(raw_msgs, key=lambda m: m["timestamp_ms"])):
             sender = fix_mojibake(m.get("sender_name", "unknown"))
-            text = fix_mojibake(m.get("content", "") or "")
+            text = fix_mojibake(m.get("content", "") or "").strip()
             atts: list[Attachment] = []
             for key, kind in (("photos", AttachmentKind.image), ("videos", AttachmentKind.video), ("audio_files", AttachmentKind.audio), ("gifs", AttachmentKind.gif)):
                 for a in m.get(key, []):
-                    atts.append(Attachment(kind=kind, path=self._media(a.get("uri"))))
+                    atts.append(Attachment(kind=kind, path=self._media(a.get("uri"), folder)))
             if sticker := m.get("sticker"):
-                atts.append(Attachment(kind=AttachmentKind.sticker, path=self._media(sticker.get("uri"))))
+                atts.append(Attachment(kind=AttachmentKind.sticker, path=self._media(sticker.get("uri"), folder)))
             if share := m.get("share"):
-                atts.append(Attachment(kind=AttachmentKind.link, url=share.get("link"), name=fix_mojibake(share.get("share_text", "")) or None))
+                about = fix_mojibake(share.get("share_text") or share.get("profile_share_name") or "").strip()
+                owner = share.get("original_content_owner") or share.get("profile_share_username")
+                label = f"@{owner}: {about}" if owner and about else (f"@{owner}" if owner else about)
+                atts.append(Attachment(kind=AttachmentKind.link, url=share.get("link"), name=label or None))
             if atts and SYSTEM_TEXT.match(text):
                 text = ""
             elif SYSTEM_TEXT.match(text):

@@ -124,3 +124,31 @@ def test_imessage_bot_queries(tmp_path, settings):
     conv = bot._conv(1)
     hist = asyncio.run(bot.fetch_history(conv, new[1][-1]))
     assert [m.id for m in hist] == ["g1", "g2"]
+
+
+def test_instagram_flat_layout_media_and_system_text(tmp_path):
+    """Thread folders copied straight into the root; uris still carry the original export prefix."""
+    thread = tmp_path / "alex_123"
+    (thread / "photos").mkdir(parents=True)
+    (thread / "photos" / "999").write_bytes(b"\xff\xd8\xff")  # no extension, like the real export
+    data = {
+        "participants": [{"name": "Alex K"}, {"name": "Sam"}, {"name": "charlie"}],
+        "title": "the group",
+        "messages": [
+            {"sender_name": "Alex K", "timestamp_ms": 5000, "content": "Reacted ð\u009f\u0098\u0082 to your message "},
+            {"sender_name": "Sam", "timestamp_ms": 4900, "content": "Sam liked a message"},
+            {"sender_name": "Sam", "timestamp_ms": 4800, "content": "Alex K added Sam to the group."},
+            {"sender_name": "Sam", "timestamp_ms": 4700, "content": "You missed an audio call", "call_duration": 0},
+            {"sender_name": "Alex K", "timestamp_ms": 4000, "content": "Alex sent an attachment.",
+             "share": {"link": "https://www.instagram.com/p/x/", "share_text": "Stanford #1 ð\u009f\u008e\u0093", "original_content_owner": "alwayscollege"}},
+            {"sender_name": "charlie", "timestamp_ms": 3000, "photos": [{"uri": "your_instagram_activity/messages/inbox/alex_123/photos/999"}]},
+            {"sender_name": "charlie", "timestamp_ms": 2000, "content": "I joined the group chat late lol"},
+        ],
+    }  # fmt: skip
+    (thread / "message_1.json").write_text(json.dumps(data))
+    [conv] = list(InstagramParser(tmp_path, "charlie", "Charlie").parse())
+    assert conv.is_group and len(conv.messages) == 3
+    real, photo, share = conv.messages
+    assert real.text == "I joined the group chat late lol"  # not mistaken for a system notice
+    assert photo.attachments[0].path == str(thread / "photos" / "999")
+    assert share.render() == '[shared https://www.instagram.com/p/x/: "@alwayscollege: Stanford #1 🎓"]'

@@ -51,6 +51,7 @@ services:
     volumes:
       - ../configs:/app/configs:ro
       - ../data:/app/data
+      - ../features:/app/features
       - ../state:/app/state       # kill switch lives here: `charliegpt pause` on the host stops it
       - ~/.cache/huggingface:/root/.cache/huggingface
     depends_on:
@@ -66,6 +67,7 @@ services:
     volumes:
       - ../configs:/app/configs:ro
       - ../data:/app/data
+      - ../features:/app/features
       - ../state:/app/state
       - ~/.cache/huggingface:/root/.cache/huggingface
     depends_on:

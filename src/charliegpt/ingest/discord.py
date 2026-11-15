@@ -1,6 +1,8 @@
-"""Discord: JSON exports from DiscordChatExporter (https://github.com/Tyrrrz/DiscordChatExporter).
+"""Discord: exports from DiscordChatExporter (https://github.com/Tyrrrz/DiscordChatExporter).
 
-Export with `--format Json --media` (media is optional; it enables image captions).
+Both `--format Json` and `--format HtmlDark/HtmlLight` are read (HTML is parsed in discord_html.py).
+`--media` is optional; it downloads attachments so images can be captioned.
+Channels you never posted in are skipped: they can't teach your replies.
 Discord's official data package only contains *your* messages with no replies around them,
 so it can't teach conversational context and isn't supported.
 """
@@ -20,20 +22,32 @@ SKIP_TYPES = {"ChannelPinnedMessage", "GuildMemberJoin", "RecipientAdd", "Recipi
 
 
 class DiscordParser:
-    def __init__(self, root: Path, my_ids: list[str], me_name: str):
+    def __init__(self, root: Path, my_ids: list[str], me_name: str, skip_without_me: bool = True):
         self.root = Path(root)
-        self.my_ids = set(my_ids)
+        self.my_ids = set(my_ids)  # user ids and/or usernames
         self.me_name = me_name
+        self.skip_without_me = skip_without_me
+        self.skipped: list[str] = []  # titles of channels dropped because you never posted
 
     def parse(self) -> Iterable[Conversation]:
-        files = [self.root] if self.root.is_file() else sorted(self.root.rglob("*.json"))
+        from charliegpt.ingest.discord_html import DiscordHTMLParser
+
+        html = DiscordHTMLParser(self.my_ids, self.me_name)
+        files = [self.root] if self.root.is_file() else sorted(self.root.rglob("*.json")) + sorted(self.root.rglob("*.html"))
         for f in files:
-            data = json.loads(f.read_text(encoding="utf-8"))
-            if "messages" not in data or "channel" not in data:
+            if f.suffix == ".html":
+                conv = html.parse_file(f)
+            else:
+                data = json.loads(f.read_text(encoding="utf-8"))
+                if "messages" not in data or "channel" not in data:
+                    continue
+                conv = self._conversation(data, f.parent)
+            if not conv.messages:
                 continue
-            conv = self._conversation(data, f.parent)
-            if conv.messages:
-                yield conv
+            if self.skip_without_me and not any(m.is_me for m in conv.messages):
+                self.skipped.append(conv.title or f.stem)
+                continue
+            yield conv
 
     def _resolve_media(self, url: str | None, base: Path) -> str | None:
         """With --media, DCE rewrites attachment urls to relative local paths."""
@@ -55,7 +69,7 @@ class DiscordParser:
                 continue
             author = m.get("author") or {}
             aid = str(author.get("id"))
-            is_me = aid in self.my_ids
+            is_me = aid in self.my_ids or author.get("name") in self.my_ids
             name = self.me_name if is_me else (author.get("nickname") or author.get("name") or aid)
             people.setdefault(aid, Participant(id=aid, name=name, is_me=is_me))
             text = m.get("content") or ""

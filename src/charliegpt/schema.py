@@ -37,9 +37,15 @@ class Attachment(BaseModel):
         if self.kind == AttachmentKind.image:
             return f'[image: "{self.caption}"]' if self.caption else "[image]"
         if self.kind == AttachmentKind.audio:
-            return "[voice memo]"
+            return f'[voice memo: "{self.caption}"]' if self.caption else "[voice memo]"
         if self.kind == AttachmentKind.link:
-            return f"[link: {self.url}]" if self.url else "[link]"
+            if self.url and self.name:
+                about = " ".join(self.name.split())
+                about = about if len(about) <= 100 else about[:97] + "..."
+                return f'[shared {self.url}: "{about}"]'
+            if self.url:
+                return f"[link: {self.url}]"
+            return f"[{self.name}]" if self.name else "[link]"
         if self.kind == AttachmentKind.sticker:
             return f"[sticker: {self.name}]" if self.name else "[sticker]"
         if self.kind == AttachmentKind.file:
@@ -82,8 +88,8 @@ class Message(BaseModel):
         if text:
             parts.append(text)
         for att in self.attachments:
-            # Don't repeat a link that's already in the text.
-            if att.kind == AttachmentKind.link and att.url and att.url in text:
+            # Don't repeat a bare link that's already in the text (keep it if it has a title).
+            if att.kind == AttachmentKind.link and att.url and att.url in text and not att.name:
                 continue
             parts.append(att.render())
         return " ".join(parts)

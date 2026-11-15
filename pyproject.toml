@@ -37,7 +37,7 @@ cuda = [
 # Apple Silicon training + serving
 mlx = ["mlx-lm>=0.24; sys_platform == 'darwin'"]
 discord = ["discord.py>=2.4"]
-imessage = []  # stdlib only (sqlite3 + osascript); macOS required
+imessage = ["beautifulsoup4>=4.12", "lxml>=5.0"]  # HTML exports; chat.db + live bot are stdlib
 instagram = ["instagrapi>=2.1"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
 

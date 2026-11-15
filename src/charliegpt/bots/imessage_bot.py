@@ -13,6 +13,7 @@ from collections import defaultdict
 
 from charliegpt.bots.base import BaseBot
 from charliegpt.ingest import imessage as im
+from charliegpt.ingest.vcard import contacts_for
 from charliegpt.schema import Conversation, Message, Platform
 
 SEND_SCRIPT = [
@@ -30,6 +31,7 @@ class IMessageBot(BaseBot):
         if sys.platform != "darwin":
             raise RuntimeError("the iMessage bot only runs on macOS")
         self.conn: sqlite3.Connection | None = None
+        self.contacts = contacts_for(self.settings)
         self._chat_rows: dict[int, sqlite3.Row] = {}
         self._chat_handles: dict[int, list[str]] = {}
         self._chat_by_guid: dict[str, int] = {}
@@ -41,8 +43,7 @@ class IMessageBot(BaseBot):
         self._chat_by_guid = {r["guid"]: rid for rid, r in self._chat_rows.items()}
 
     def _conv(self, chat_id: int) -> Conversation:
-        ident = self.settings.identity
-        return im.chat_conversation(self._chat_rows[chat_id], self._chat_handles.get(chat_id, []), ident.contacts, ident.name)
+        return im.chat_conversation(self._chat_rows[chat_id], self._chat_handles.get(chat_id, []), self.contacts, self.settings.identity.name)
 
     def _messages(self, where: str, params: tuple) -> dict[int, list[Message]]:
         assert self.conn
@@ -51,8 +52,7 @@ class IMessageBot(BaseBot):
         by_chat: dict[int, list[sqlite3.Row]] = defaultdict(list)
         for r in rows:
             by_chat[r["chat_id"]].append(r)
-        ident = self.settings.identity
-        return {cid: im.rows_to_messages(rs, atts, ident.contacts, ident.name) for cid, rs in by_chat.items()}
+        return {cid: im.rows_to_messages(rs, atts, self.contacts, self.settings.identity.name) for cid, rs in by_chat.items()}
 
     async def run(self) -> None:
         self.conn = im.connect(self.settings.imessage.db_path)
