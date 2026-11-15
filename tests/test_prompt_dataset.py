@@ -62,3 +62,28 @@ def test_build_dataset_files(dm, settings, tmp_path):
     assert st.train + st.valid == 80 and st.valid > 0
     row = json.loads((tmp_path / "ds" / "train.jsonl").read_text().splitlines()[0])
     assert row["messages"][-1]["role"] == "assistant"
+
+
+async def test_profiles_concurrent_and_resumable(tmp_path):
+    from datetime import datetime, timedelta, timezone
+
+    from charliegpt.memory.profiles import ProfileStore, build_profiles
+    from charliegpt.schema import Conversation, Message, Participant, Platform
+
+    t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    convs = [
+        Conversation(platform=Platform.discord, thread_id=str(i), title=f"chat{i}", is_group=False,
+                     participants=[Participant(id="me", name="Charlie", is_me=True), Participant(id="sam", name="Sam")],
+                     messages=[Message(id=f"{i}-{j}", sender_id="sam", sender_name="Sam", is_me=False, timestamp=t0 + timedelta(minutes=j), text="yo") for j in range(3)])
+        for i in range(5)
+    ]  # fmt: skip
+    calls = []
+
+    async def complete(msgs):
+        calls.append(msgs)
+        return "- friend"
+
+    store = ProfileStore(tmp_path / "profiles.json")
+    assert await build_profiles(convs, store, complete, "Charlie", min_messages=1, concurrency=2) == 5
+    again = ProfileStore(tmp_path / "profiles.json")  # reloaded from disk
+    assert await build_profiles(convs, again, complete, "Charlie", min_messages=1) == 0 and len(calls) == 5

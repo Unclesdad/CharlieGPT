@@ -188,7 +188,12 @@ def index(ctx: typer.Context):
 
 
 @app.command()
-def profiles(ctx: typer.Context, min_messages: int = typer.Option(30, help="Skip chats smaller than this")):
+def profiles(
+    ctx: typer.Context,
+    min_messages: int = typer.Option(30, help="Skip chats smaller than this"),
+    concurrency: int = typer.Option(8, help="Requests in flight at once"),
+    redo: bool = typer.Option(False, help="Regenerate chats that already have a summary"),
+):
     """Summarize each chat (relationship, topics, tone) with the helper model. Needs a running server."""
     from charliegpt.infer.client import LLMClient
     from charliegpt.memory.profiles import ProfileStore, build_profiles
@@ -199,7 +204,7 @@ def profiles(ctx: typer.Context, min_messages: int = typer.Option(30, help="Skip
     client = LLMClient(s.inference)
     store = ProfileStore(s.paths.memory / "profiles.json")
     n = asyncio.run(
-        build_profiles(sessions, store, lambda msgs: client.helper(msgs, temperature=0.3), s.identity.name, min_messages=min_messages, on_progress=lambda k: console.print(f"  profiled {k}"))
+        build_profiles(sessions, store, lambda msgs: client.helper(msgs, temperature=0.3), s.identity.name, min_messages=min_messages, on_progress=lambda k: console.print(f"  profiled {k}"), concurrency=concurrency, redo=redo)
     )
     console.print(f"[green]✓[/] {n} profiles → {store.path} (edit the `notes` fields freely)")
 

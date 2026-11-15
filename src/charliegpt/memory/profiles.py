@@ -5,6 +5,7 @@ Generated once from history by the helper (base) model; `notes` is yours to edit
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -60,14 +61,18 @@ async def build_profiles(
     max_chars: int = 8000,
     min_messages: int = 30,
     on_progress: Callable[[str], None] | None = None,
+    concurrency: int = 8,
+    redo: bool = False,
 ) -> int:
     by_key: dict[str, list[Conversation]] = defaultdict(list)
     for s in sessions:
         by_key[s.key].append(s)
+    todo = [g for k, g in by_key.items() if sum(len(s.messages) for s in g) >= min_messages and (redo or not store.data.get(k, {}).get("summary"))]
+    sem = asyncio.Semaphore(concurrency)  # vLLM batches concurrent requests
     n = 0
-    for key, group in by_key.items():
-        if sum(len(s.messages) for s in group) < min_messages:
-            continue
+
+    async def one(group: list[Conversation]) -> None:
+        nonlocal n
         conv = group[-1]
         who = conv.title if conv.is_group else (conv.others()[0].name if conv.others() else "a friend")
         prompt = PROFILE_PROMPT.format(
@@ -76,10 +81,14 @@ async def build_profiles(
             them_pronoun="this group" if conv.is_group else "this person",
             transcript=transcript(group, max_chars),
         )
-        summary = await complete([{"role": "user", "content": prompt}])
+        async with sem:
+            summary = await complete([{"role": "user", "content": prompt}])
         store.set(conv, str(summary).strip())
+        store.save()  # after each one, so an interrupted run resumes where it stopped
         n += 1
         if on_progress:
-            on_progress(key)
+            on_progress(f"[{n}/{len(todo)}] {conv.key}")
+
+    await asyncio.gather(*(one(g) for g in todo))
     store.save()
     return n
