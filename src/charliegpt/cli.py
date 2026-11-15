@@ -17,6 +17,7 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.progress import track
 from rich.logging import RichHandler
 from rich.table import Table
 
@@ -228,7 +229,8 @@ def build_dataset_cmd(ctx: typer.Context):
         retriever = r if r.ready else None
         if retriever is None:
             console.print("[yellow]no RAG index; building without examples (run `charliegpt index` first)[/]")
-    st = build_dataset(sessions, s, s.paths.dataset, profiles=ProfileStore(s.paths.memory / "profiles.json"), retriever=retriever)
+    st = build_dataset(sessions, s, s.paths.dataset, profiles=ProfileStore(s.paths.memory / "profiles.json"), retriever=retriever,
+                       progress=lambda xs: track(xs, description="building examples", console=console))
     console.print(f"[green]✓[/] {st.train} train / {st.valid} valid examples → {s.paths.dataset}")
 
 

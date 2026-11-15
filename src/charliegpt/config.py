@@ -112,6 +112,7 @@ class BotsCfg(BaseModel):
     typing_chars_per_second: float = 7.0
     min_typing_delay: float = 1.0
     max_typing_delay: float = 8.0
+    typing_jitter: float = 0.6  # random extra seconds per bubble
     history_limit: int = 40
     takeover_minutes: float = 30.0  # go quiet in a chat after the real you texts in it
     dry_run: bool = False

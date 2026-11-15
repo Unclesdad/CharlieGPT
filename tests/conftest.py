@@ -17,6 +17,7 @@ def settings(tmp_path) -> Settings:
     s.bots.debounce_seconds = 0.01
     s.bots.min_typing_delay = 0
     s.bots.max_typing_delay = 0
+    s.bots.typing_jitter = 0
     s.bots.typing_chars_per_second = 1e9
     s.rag.enabled = False
     s.vision.backend = "none"

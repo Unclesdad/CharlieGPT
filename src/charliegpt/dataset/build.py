@@ -11,6 +11,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable, Iterable
 
 from charliegpt.config import Settings
 from charliegpt.context import make_context
@@ -62,11 +63,12 @@ def build_dataset(
     out_dir: Path,
     profiles: ProfileStore | None = None,
     retriever: Retriever | None = None,
+    progress: Callable[[Iterable[Conversation]], Iterable[Conversation]] = lambda xs: xs,
 ) -> BuildStats:
     rng = random.Random(settings.dataset.seed)
     stats = BuildStats()
     train, valid = [], []
-    for conv in sessions:
+    for conv in progress(sessions):
         exs = examples_for(conv, settings, profiles, retriever, rng)
         if not exs:
             stats.skipped += 1

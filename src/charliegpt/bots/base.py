@@ -123,7 +123,7 @@ class BaseBot(ABC):
 
     def typing_delay(self, text: str) -> float:
         d = len(text) / self.cfg.typing_chars_per_second
-        return min(max(d, self.cfg.min_typing_delay), self.cfg.max_typing_delay) + random.uniform(0, 0.6)
+        return min(max(d, self.cfg.min_typing_delay), self.cfg.max_typing_delay) + random.uniform(0, self.cfg.typing_jitter)
 
     async def _respond_later(self, st: ChatState) -> None:
         try:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 from pathlib import Path
 
@@ -68,8 +69,16 @@ class Retriever:
         if not self.ready or not query or k <= 0:
             return []
         scores = self.vectors @ self.embedder([query])[0]
+        # Only sort the best few candidates; fall back to a full sort if one thread hogs them all.
+        top = min(len(scores), k * 20)
+        cand = np.argpartition(-scores, top - 1)[:top]
+        best = cand[np.argsort(-scores[cand])]
+
+        def rest():  # full sort only if one thread hogs every top candidate
+            yield from np.argsort(-scores)[top:]
+
         out: list[Example] = []
-        for i in np.argsort(-scores):
+        for i in itertools.chain(best, rest()):
             p = self.pairs[i]
             if exclude_thread and p["thread"] == exclude_thread:
                 continue
