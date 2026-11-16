@@ -279,7 +279,7 @@ def train(
 def vision_serve_command(s: Settings) -> list[str]:
     v = s.vision
     return ["vllm", "serve", v.model, "--host", "0.0.0.0", "--port", str(v.port), "--max-model-len", "4096",
-            "--gpu-memory-utilization", "0.20", "--limit-mm-per-prompt", json.dumps({"image": 1})]  # fmt: skip
+            "--gpu-memory-utilization", str(v.gpu_memory_utilization), "--limit-mm-per-prompt", json.dumps({"image": 1})]  # fmt: skip
 
 
 def serve_command(s: Settings, backend: str) -> list[str]:

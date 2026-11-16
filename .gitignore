@@ -15,3 +15,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
+
+# local file lists (contain personal paths)
+imsg_files.txt
+*_files.txt
