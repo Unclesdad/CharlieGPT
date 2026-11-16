@@ -142,6 +142,6 @@ def test_training_runs_named_by_start_and_latest_served(tmp_path, settings):
     assert list_runs(models, "charlie", "cuda") == [old, new]  # the symlink isn't a run
 
     settings.paths.models = models
-    assert f"charlie={new}" in serve_command(settings, "cuda")
+    assert f"charlie={new.resolve()}" in serve_command(settings, "cuda")
     settings.model.adapter = old.name
-    assert f"charlie={old}" in serve_command(settings, "cuda")
+    assert f"charlie={old.resolve()}" in serve_command(settings, "cuda")

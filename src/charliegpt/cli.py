@@ -293,6 +293,7 @@ def serve_command(s: Settings, backend: str) -> list[str]:
 
     m, i = s.model, s.inference
     adapter = find_adapter(s.paths.models, m.adapter_name, backend, m.adapter)
+    adapter = adapter and adapter.resolve()  # vLLM treats a relative path it can't see as a Hugging Face repo id
     if backend == "cuda":
         cmd = ["vllm", "serve", m.serve_base, "--served-model-name", m.served_base_name, "--host", "0.0.0.0", "--port", str(i.port),
                "--max-model-len", str(m.max_seq_length * 2), "--gpu-memory-utilization", str(i.gpu_memory_utilization)]  # fmt: skip
