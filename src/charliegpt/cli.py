@@ -158,20 +158,34 @@ def stats(ctx: typer.Context):
 
 
 @app.command()
-def caption(ctx: typer.Context):
+def caption(
+    ctx: typer.Context,
+    platform: Optional[Platform] = typer.Option(None, help="Only this platform's images"),
+    list_files: bool = typer.Option(False, "--list", help="Print uncaptioned image paths (e.g. for rsync --files-from) and exit"),
+):
     """Caption every image in the ingested data with the vision model (cached; safe to re-run)."""
     from charliegpt.ingest.caption import caption_threads, make_captioner
-    from charliegpt.store import save_threads
     from charliegpt.schema import Conversation as C
+    from charliegpt.store import save_threads
 
     s = S(ctx)
+    files = sorted(s.paths.processed.glob(f"{platform.value}.jsonl" if platform else "*.jsonl"))
+    if list_files:
+        for f in files:
+            for line in f.read_text(encoding="utf-8").split("\n"):
+                if line.strip():
+                    for m in C.model_validate_json(line).messages:
+                        for a in m.attachments:
+                            if a.kind.value == "image" and a.path and not a.caption:
+                                print(a.path)
+        return
     captioner = make_captioner(s)
     if captioner is None:
         console.print("vision.backend is 'none'; nothing to do.")
         return
-    for f in sorted(s.paths.processed.glob("*.jsonl")):
+    for f in files:
         convs = [C.model_validate_json(l) for l in f.read_text(encoding="utf-8").split("\n") if l.strip()]
-        n = caption_threads(convs, captioner, on_error=lambda p, e: console.print(f"[yellow]skip {p}: {e}[/]"))
+        n = caption_threads(convs, captioner, on_error=lambda p, e: console.print(f"[yellow]skip {p}: {e}[/]"), path_map=s.vision.path_map)
         save_threads(convs, f)
         console.print(f"[green]✓[/] {f.name}: {n} new captions")
 
@@ -262,6 +276,12 @@ def train(
 # ---- serving ---------------------------------------------------------------
 
 
+def vision_serve_command(s: Settings) -> list[str]:
+    v = s.vision
+    return ["vllm", "serve", v.model, "--host", "0.0.0.0", "--port", str(v.port), "--max-model-len", "4096",
+            "--gpu-memory-utilization", "0.20", "--limit-mm-per-prompt", json.dumps({"image": 1})]  # fmt: skip
+
+
 def serve_command(s: Settings, backend: str) -> list[str]:
     m, i = s.model, s.inference
     if backend == "cuda":
@@ -284,14 +304,15 @@ def serve(
     ctx: typer.Context,
     backend: str = typer.Option("auto", help="auto | cuda | mlx"),
     print_only: bool = typer.Option(False, "--print", help="Print the command instead of running it"),
+    vision: bool = typer.Option(False, "--vision", help="(CUDA) serve the image captioner on vision.port instead"),
 ):
     """Run the OpenAI-compatible inference server (vLLM on CUDA, mlx_lm.server on Mac)."""
     s = S(ctx)
     if backend == "auto":
         backend = "cuda" if detect_device() == "cuda" else "mlx"
-    cmd = serve_command(s, backend)
+    cmd = vision_serve_command(s) if vision else serve_command(s, backend)
     console.print(f"[dim]$ {shlex.join(cmd)}[/]")
-    if backend == "mlx":
+    if backend == "mlx" and not vision:
         console.print("[dim]note: mlx_lm.server serves one model; persona and helper calls both use it.[/]")
     if not print_only:
         os.execvp(cmd[0], cmd)

@@ -98,6 +98,10 @@ class VisionCfg(BaseModel):
     model: str = "Qwen/Qwen2.5-VL-3B-Instruct-AWQ"
     local_model_cuda: str = "Qwen/Qwen2.5-VL-3B-Instruct"
     local_model_mlx: str = "mlx-community/Qwen2.5-VL-3B-Instruct-4bit"
+    port: int = 8001
+    # Path prefix rewrites for captioning on another machine, e.g.
+    # {"/Users/you/Library/Messages/Attachments": "data/imessage_attachments"}
+    path_map: dict[str, str] = Field(default_factory=dict)
 
 
 class RagCfg(BaseModel):

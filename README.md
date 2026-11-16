@@ -120,11 +120,26 @@ The model sees each message as a single line: text plus placeholders like `[imag
 
 ```bash
 charliegpt caption         # image → [image: "caption"] (vision server or vision.backend: local); cached, re-runnable
+                           #   on the 3090: `charliegpt serve --vision` in another terminal first
+                           #   --platform imessage: one source only; --list: print the image files it needs
 charliegpt index           # RAG index of past exchanges
 charliegpt serve &         # base model up (profiles need the helper model)
 charliegpt profiles        # per-chat summaries → data/memory/profiles.json (edit `notes` freely)
 charliegpt build-dataset   # → data/dataset/{train,valid}.jsonl
 ```
+
+**Captioning on another machine.** Instagram images live in `data/instagram`, so copying that folder is enough. iMessage images live in `~/Library/Messages/Attachments`; copy just the ones needed and remap the prefix:
+```bash
+# Mac: copy the referenced images (not the whole Attachments folder)
+charliegpt caption --platform imessage --list | sed "s|^$HOME/Library/Messages/Attachments/||" > imsg_files.txt
+rsync -a --files-from=imsg_files.txt ~/Library/Messages/Attachments/ ubuntu:CharlieGPT/data/imessage_attachments/
+```
+```yaml
+# Ubuntu config
+vision:
+  path_map: {"/Users/<you>/Library/Messages/Attachments": "data/imessage_attachments"}
+```
+Discord attachments are CDN links that expire within about a day, so they can't be captioned later.
 
 ## 3. Train
 

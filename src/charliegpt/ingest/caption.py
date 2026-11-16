@@ -145,15 +145,26 @@ def make_captioner(settings: Settings) -> Captioner | None:
     return CachedCaptioner(inner, settings.paths.captions)
 
 
-def caption_threads(convs: Iterable[Conversation], captioner: Captioner, on_error=None) -> int:
+def resolve(path: str, path_map: dict[str, str] | None = None) -> Path:
+    """Where an attachment lives on this machine (features keep the original path)."""
+    for src, dst in (path_map or {}).items():
+        if path.startswith(src):
+            return Path(dst + path[len(src):])
+    return Path(path).expanduser()
+
+
+def caption_threads(convs: Iterable[Conversation], captioner: Captioner, on_error=None, path_map: dict[str, str] | None = None) -> int:
     n = 0
     for c in convs:
         for m in c.messages:
             for a in m.attachments:
-                if a.kind != AttachmentKind.image or a.caption or not a.path or not Path(a.path).exists():
+                if a.kind != AttachmentKind.image or a.caption or not a.path:
+                    continue
+                local = resolve(a.path, path_map)
+                if not local.exists():
                     continue
                 try:
-                    a.caption = captioner.caption(Path(a.path))
+                    a.caption = captioner.caption(local)
                     n += 1
                 except Exception as e:  # one bad file shouldn't stop a 10k-image run
                     if on_error:

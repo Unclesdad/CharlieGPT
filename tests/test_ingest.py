@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from pathlib import Path
 
 from charliegpt.ingest.discord import DiscordParser
 from charliegpt.ingest.imessage import IMessageParser, decode_attributed_body
@@ -152,3 +153,11 @@ def test_instagram_flat_layout_media_and_system_text(tmp_path):
     assert real.text == "I joined the group chat late lol"  # not mistaken for a system notice
     assert photo.attachments[0].path == str(thread / "photos" / "999")
     assert share.render() == '[shared https://www.instagram.com/p/x/: "@alwayscollege: Stanford #1 🎓"]'
+
+
+def test_caption_path_map(tmp_path):
+    from charliegpt.ingest.caption import resolve
+
+    m = {"/Users/me/Library/Messages/Attachments": str(tmp_path / "att")}
+    assert resolve("/Users/me/Library/Messages/Attachments/ab/0/IMG_1.heic", m) == tmp_path / "att/ab/0/IMG_1.heic"
+    assert resolve("data/instagram/x/photos/1", m) == Path("data/instagram/x/photos/1")
