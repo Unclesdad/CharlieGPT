@@ -95,9 +95,14 @@ class ReplyEngine:
             return bubbles
 
         bubbles = split_bubbles(raw, me)
-        if not bubbles or guardrails.breaks_character(bubbles):
+        for _ in range(2):  # regenerate if empty (media-only) or out of character
+            if bubbles and not guardrails.breaks_character(bubbles):
+                return bubbles[:MAX_BUBBLES]
             bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
-        if guardrails.breaks_character(bubbles):
+        if bubbles and not guardrails.breaks_character(bubbles):
+            return bubbles[:MAX_BUBBLES]
+        if guardrails.ASKS_IF_AI.search(incoming):
+            return [random.choice(guardrails.DEFLECTIONS)]
+        if bubbles:
             log.info("dropping out-of-character reply in %s", conv.key)
-            return []
-        return bubbles[:MAX_BUBBLES]
+        return []

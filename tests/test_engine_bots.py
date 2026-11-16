@@ -139,3 +139,22 @@ async def test_excuse_drops_echoed_style_and_list_bullets():
     out = f"I was just looking at my watch\n- Yep\n- cant my goldfish is running for mayor{BUBBLE}lol"
     assert await absurd_excuse(Echo(out), "Charlie", "gym tmrw?", style) == ["cant my goldfish is running for mayor", "lol"]
     assert (await absurd_excuse(Echo("Yep"), "Charlie", "gym tmrw?", style))[0] in FALLBACK_EXCUSES  # only echoes left
+
+
+def test_leaks_and_casual_excuses():
+    from charliegpt.infer.guardrails import AI_LEAK, _casual
+
+    for leak in ["It’s because I’m not an evil AI", "I am more than my code. I am not just a chatbot", "im a bot lol"]:
+        assert AI_LEAK.search(leak), leak
+    for fine in ["the robot code is on GitHub", "ai generated slop in my feed", "the bot in that server is broken", "said hi"]:
+        assert not AI_LEAK.search(fine), fine
+    assert _casual("I’m sorry, but I’ve been hired to train llamas.") == "I’ve been hired to train llamas"
+
+
+async def test_engine_deflects_ai_question_when_model_keeps_leaking(dm, settings):
+    from charliegpt.infer.guardrails import DEFLECTIONS
+
+    c = FakeClient(persona="I am more than my code. I am a chatbot")
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "are you ai", 60)]})
+    out = await engine(settings, c).reply(conv)
+    assert len(out) == 1 and out[0] in DEFLECTIONS
