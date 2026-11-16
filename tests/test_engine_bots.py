@@ -229,3 +229,22 @@ async def test_brushoffs_regenerated_when_asked_a_question(dm, settings):
     assert await engine(settings, c).reply(asked) == ["it was sick we went hiking"]
     e = engine(settings, FakeClient(persona="huh"))
     assert await e.reply(asked) == ["huh"] and "non-answer" in e.last_why  # still sends something
+
+
+async def test_reply_offering_plans_is_regenerated(dm, settings):
+    from charliegpt.infer.guardrails import might_be_commitment
+
+    assert might_be_commitment("sure how does this sunday sound") and might_be_commitment("we should grab lunch")
+
+    class Offers(FakeClient):
+        async def helper(self, messages, temperature=0.2, max_tokens=300):
+            if "is about to send" in messages[-1]["content"]:
+                self.calls.append("offer")
+                return "YES" if "hang out" in messages[-1]["content"] else "NO"
+            return await super().helper(messages, temperature, max_tokens)
+
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "sorry ive been ghosting", 60)]})
+    c = Offers(persona=["np we should hang out soon", "np ur good"])
+    assert await engine(settings, c).reply(conv) == ["np ur good"] and c.calls.count("offer") == 1
+    e = engine(settings, Offers(persona="lets hang out tmrw"))
+    assert await e.reply(conv) == [] and "offered" in e.last_why

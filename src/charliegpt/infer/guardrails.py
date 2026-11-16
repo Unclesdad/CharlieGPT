@@ -18,7 +18,9 @@ COMMITMENT_HINT = re.compile(
     r"free (tonight|tomorrow|today|this)|come (over|thru|through|to|with)|hang( out)?|meet( up)?|pull up|"
     r"tonight|tn|tonite|2nite|tomorrow|tmrw|tmr|this weekend|next week|lend|borrow|venmo|zelle|cash ?app|pay|owe|"
     r"(hop|get|jump) (on|in)|play|join|you on|u on|vc|call me|ft|facetime|game|queue|run it|"
-    r"promise|help me|pick (me )?up|give me a ride|drive me|join us|you coming|u coming|let'?s go|lets)\b|\$\s?\d+",
+    r"promise|help me|pick (me )?up|give me a ride|drive me|join us|you coming|u coming|let'?s go|lets|"
+    r"(mon|tues|wednes|thurs|fri|satur|sun)day|this (mon|tue|wed|thu|fri|sat|sun)\w*|sounds? (good|ok)|what time|"
+    r"when (are|r|can|should) (you|u|we)|(you|u) down|hmu|link up|coffee|lunch|dinner|grab food)\b|\$\s?\d+",
     re.I,
 )
 
@@ -31,6 +33,14 @@ hop on a game or call, do a favor, lend or pay money, or promise something?
 Only YES for a real request aimed at {me}. Hype, stories, past events, opinions and ordinary questions are NO.
 YES: "wanna hop on tn" / "can u venmo me 20" / "come thru later?" / "you coming saturday" / "can you help me move"
 NO: "lets gooo" / "did you play last night" / "tonight was crazy" / "can you believe this" / "you on tiktok?" / "i owe him so much"
+Answer with exactly YES or NO."""
+
+OFFER_PROMPT = """{me} is about to send this:
+\"\"\"
+{reply}
+\"\"\"
+Does {me} propose, offer, or agree to a real plan or commitment: meeting up, hanging out, coming somewhere, \
+hopping on a game or call, a favor, lending or paying money, or a promise? Past plans and obvious jokes are NO.
 Answer with exactly YES or NO."""
 
 EXCUSE_PROMPT = """{me} just got this text:
@@ -105,6 +115,15 @@ async def needs_excuse(client, me: str, text: str) -> bool:
     if not might_be_commitment(text):
         return False
     answer = await client.helper([{"role": "user", "content": CLASSIFY_PROMPT.format(me=me, text=text)}], temperature=0.0, max_tokens=5)
+    return answer.strip().upper().startswith("YES")
+
+
+async def offers_commitment(client, me: str, bubbles: list[str]) -> bool:
+    """The model itself suggesting plans ("we should hang out soon, ill buy coffee") is a commitment too."""
+    reply = "\n".join(bubbles)
+    if not might_be_commitment(reply):
+        return False
+    answer = await client.helper([{"role": "user", "content": OFFER_PROMPT.format(me=me, reply=reply)}], temperature=0.0, max_tokens=5)
     return answer.strip().upper().startswith("YES")
 
 

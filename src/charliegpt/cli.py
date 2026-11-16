@@ -307,6 +307,8 @@ def serve_command(s: Settings, backend: str) -> list[str]:
     if backend == "cuda":
         cmd = ["vllm", "serve", m.serve_base, "--served-model-name", m.served_base_name, "--host", "0.0.0.0", "--port", str(i.port),
                "--max-model-len", str(m.max_seq_length * 2), "--gpu-memory-utilization", str(i.gpu_memory_utilization)]  # fmt: skip
+        if not adapter:
+            console.print("[yellow]No finished training run, so model \"charlie\" won't exist (see `charliegpt models`).[/]")
         if adapter:
             cmd += ["--enable-lora", "--max-lora-rank", str(s.train.lora_r), "--lora-modules", f"{m.adapter_name}={adapter}"]
         return cmd
@@ -462,6 +464,10 @@ def chat(ctx: typer.Context, them: str = typer.Option("Alex", help="Who you're p
         participants=[Participant(id="me", name=s.identity.name, is_me=True), Participant(id="them", name=them)],
     )
     console.print(f"[dim]You are {them}. Ctrl-C to quit.[/]")
+    try:
+        import readline  # noqa: F401  # arrow keys edit the line instead of typing ^[[A
+    except ImportError:
+        pass
 
     async def loop():
         while True:

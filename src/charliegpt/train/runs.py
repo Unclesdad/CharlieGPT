@@ -37,10 +37,8 @@ def find_adapter(models: Path, name: str, backend: str, choice: str | None = "la
                 return p
         raise FileNotFoundError(f"no model {choice!r} in {models} (see `charliegpt models`)")
     runs = list_runs(models, name, backend)
-    if runs:
-        return runs[-1]
-    legacy = Path(models) / _tag(name, backend)  # from before runs were timestamped
-    return legacy if legacy.exists() else None
+    # No fallback to an untimestamped models/charlie: it predates the current prompt format and acts like a plain assistant.
+    return runs[-1] if runs else None
 
 
 def mark_done(run: Path) -> None:

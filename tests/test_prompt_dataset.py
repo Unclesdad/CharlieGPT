@@ -118,8 +118,8 @@ def test_training_runs_named_by_start_and_latest_served(tmp_path, settings):
 
     models = tmp_path / "models"
     assert find_adapter(models, "charlie", "cuda") is None
-    (models / "charlie").mkdir(parents=True)  # adapter from before runs were timestamped
-    assert find_adapter(models, "charlie", "cuda") == models / "charlie"
+    (models / "charlie").mkdir(parents=True)  # adapter from before runs were timestamped: only if asked for
+    assert find_adapter(models, "charlie", "cuda") is None and find_adapter(models, "charlie", "cuda", "charlie") == models / "charlie"
 
     old = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 1, 9, 5))
     new = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 15, 14, 32, 5))
