@@ -99,9 +99,9 @@ class VisionCfg(BaseModel):
     local_model_cuda: str = "Qwen/Qwen2.5-VL-3B-Instruct"
     local_model_mlx: str = "mlx-community/Qwen2.5-VL-3B-Instruct-4bit"
     port: int = 8001
-    # Share of GPU memory for `serve --vision`. 0.20 leaves room for the persona model next to it;
-    # raise it (e.g. 0.6) when captioning with nothing else on the GPU.
-    gpu_memory_utilization: float = 0.20
+    # Share of GPU memory for `serve --vision` (Docker sets its own 0.20 so it fits next to the persona model).
+    # Lower it if you run `serve --vision` while the persona server is also up.
+    gpu_memory_utilization: float = 0.6
     # Path prefix rewrites for captioning on another machine, e.g.
     # {"/Users/you/Library/Messages/Attachments": "data/imessage_attachments"}
     path_map: dict[str, str] = Field(default_factory=dict)
