@@ -45,7 +45,7 @@ def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = 
         train_dataset=ds["train"],
         eval_dataset=ds.get("validation"),
         args=SFTConfig(
-            output_dir=str(out_dir / "checkpoints"),
+            output_dir=str(out_dir / "checkpoints"),  # out_dir is this run's folder (see train/runs.py)
             dataset_text_field="text",
             max_length=m.max_seq_length,  # TRL's default (1024) would cut off long contexts
             per_device_train_batch_size=t.batch_size,
@@ -73,10 +73,9 @@ def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = 
     trainer = train_on_responses_only(trainer, instruction_part="<|im_start|>user\n", response_part="<|im_start|>assistant\n")
     trainer.train()
 
-    adapter_dir = out_dir / m.adapter_name
-    model.save_pretrained(str(adapter_dir))
-    tokenizer.save_pretrained(str(adapter_dir))
+    model.save_pretrained(str(out_dir))
+    tokenizer.save_pretrained(str(out_dir))
     if merge:
         # Full 16-bit merge, e.g. to convert for MLX on the Mac (`mlx_lm.convert --hf-path ... -q`).
-        model.save_pretrained_merged(str(out_dir / f"{m.adapter_name}-merged"), tokenizer, save_method="merged_16bit")
-    return adapter_dir
+        model.save_pretrained_merged(str(out_dir.with_name(f"{out_dir.name}-merged")), tokenizer, save_method="merged_16bit")
+    return out_dir

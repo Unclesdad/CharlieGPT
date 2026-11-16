@@ -16,7 +16,7 @@ def mlx_train_command(settings: Settings, data_dir: Path, out_dir: Path) -> list
         "--model", m.mlx_base,
         "--train",
         "--data", str(data_dir),
-        "--adapter-path", str(out_dir / f"{m.adapter_name}-mlx"),
+        "--adapter-path", str(out_dir),
         "--iters", str(t.mlx_iters),
         "--batch-size", str(t.mlx_batch_size),
         "--num-layers", str(t.mlx_num_layers),
@@ -32,4 +32,4 @@ def mlx_train_command(settings: Settings, data_dir: Path, out_dir: Path) -> list
 def train_mlx(settings: Settings, data_dir: Path, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     subprocess.run(mlx_train_command(settings, data_dir, out_dir), check=True)
-    return out_dir / f"{settings.model.adapter_name}-mlx"
+    return out_dir

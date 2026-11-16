@@ -37,6 +37,7 @@ model:
   served_base_name: qwen3-14b
   mlx_base: mlx-community/Qwen3-8B-4bit            # Mac training/serving (18GB RAM friendly)
   adapter_name: charlie
+  adapter: latest                                  # training run to serve: latest, or a name from `charliegpt models`
   max_seq_length: 4096
 
 train:

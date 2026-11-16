@@ -262,14 +262,19 @@ def train(
     if not (s.paths.dataset / "train.jsonl").exists():
         console.print("No dataset. Run `charliegpt build-dataset` first.")
         raise typer.Exit(1)
+    from charliegpt.train.runs import link_latest, new_run_dir
+
+    run = new_run_dir(s.paths.models, s.model.adapter_name, backend)
+    console.print(f"training run: {run.name}")
     if backend == "cuda":
         from charliegpt.train.cuda import train_cuda
 
-        out = train_cuda(s, s.paths.dataset, s.paths.models, merge=merge)
+        out = train_cuda(s, s.paths.dataset, run, merge=merge)
+        link_latest(out)
     else:
         from charliegpt.train.mlx import train_mlx
 
-        out = train_mlx(s, s.paths.dataset, s.paths.models)
+        out = train_mlx(s, s.paths.dataset, run)
     console.print(f"[green]✓[/] adapter saved → {out}")
 
 
@@ -284,18 +289,19 @@ def vision_serve_command(s: Settings) -> list[str]:
 
 
 def serve_command(s: Settings, backend: str) -> list[str]:
+    from charliegpt.train.runs import find_adapter
+
     m, i = s.model, s.inference
+    adapter = find_adapter(s.paths.models, m.adapter_name, backend, m.adapter)
     if backend == "cuda":
         cmd = ["vllm", "serve", m.serve_base, "--served-model-name", m.served_base_name, "--host", "0.0.0.0", "--port", str(i.port),
                "--max-model-len", str(m.max_seq_length * 2), "--gpu-memory-utilization", str(i.gpu_memory_utilization)]  # fmt: skip
-        adapter = s.paths.models / m.adapter_name
-        if adapter.exists():
+        if adapter:
             cmd += ["--enable-lora", "--max-lora-rank", str(s.train.lora_r), "--lora-modules", f"{m.adapter_name}={adapter}"]
         return cmd
     cmd = [sys.executable, "-m", "mlx_lm", "server", "--model", m.mlx_base, "--host", "0.0.0.0", "--port", str(i.port),
            "--chat-template-args", json.dumps({"enable_thinking": False})]  # fmt: skip
-    adapter = s.paths.models / f"{m.adapter_name}-mlx"
-    if adapter.exists():
+    if adapter:
         cmd += ["--adapter-path", str(adapter)]
     return cmd
 
@@ -306,12 +312,19 @@ def serve(
     backend: str = typer.Option("auto", help="auto | cuda | mlx"),
     print_only: bool = typer.Option(False, "--print", help="Print the command instead of running it"),
     vision: bool = typer.Option(False, "--vision", help="(CUDA) serve the image captioner on vision.port instead"),
+    model: Optional[str] = typer.Option(None, "--model", "-m", help="Training run to serve (default: latest; see `charliegpt models`)"),
 ):
     """Run the OpenAI-compatible inference server (vLLM on CUDA, mlx_lm.server on Mac)."""
     s = S(ctx)
+    if model:
+        s.model.adapter = model
     if backend == "auto":
         backend = "cuda" if detect_device() == "cuda" else "mlx"
-    cmd = vision_serve_command(s) if vision else serve_command(s, backend)
+    try:
+        cmd = vision_serve_command(s) if vision else serve_command(s, backend)
+    except FileNotFoundError as e:
+        console.print(str(e))
+        raise typer.Exit(1)
     console.print(f"[dim]$ {shlex.join(cmd)}[/]")
     if backend == "mlx" and not vision:
         console.print("[dim]note: mlx_lm.server serves one model; persona and helper calls both use it.[/]")
@@ -367,6 +380,34 @@ def resume(ctx: typer.Context):
 
 
 @app.command()
+def models(ctx: typer.Context):
+    """List training runs (named by start time); `serve` uses the newest unless told otherwise."""
+    from charliegpt.train.runs import find_adapter, list_runs
+
+    s = S(ctx)
+    for backend in ("cuda", "mlx"):
+        runs = list_runs(s.paths.models, s.model.adapter_name, backend)
+        try:
+            chosen = find_adapter(s.paths.models, s.model.adapter_name, backend, s.model.adapter)
+        except FileNotFoundError:
+            chosen = None
+        if chosen and chosen not in runs:
+            runs.append(chosen)  # a pre-timestamp adapter or an explicit path
+        for r in runs:
+            console.print(f"{'→' if r == chosen else ' '} {backend:<4} {r.name if r.parent == s.paths.models else r}")
+    console.print("[dim]→ = what `serve` uses. Pick another with `serve --model <name>` or model.adapter in the config.[/]")
+
+
+def _adapter_or_none(s: Settings, backend: str) -> Path | None:
+    from charliegpt.train.runs import find_adapter
+
+    try:
+        return find_adapter(s.paths.models, s.model.adapter_name, backend, s.model.adapter)
+    except FileNotFoundError:
+        return None
+
+
+@app.command()
 def status(ctx: typer.Context):
     """Show kill switch, data and model state."""
     from charliegpt.infer.guardrails import KillSwitch
@@ -383,8 +424,7 @@ def status(ctx: typer.Context):
         ("dataset", s.paths.dataset / "train.jsonl"),
         ("rag index", s.paths.memory / "rag" / "vectors.npy"),
         ("profiles", s.paths.memory / "profiles.json"),
-        ("cuda adapter", s.paths.models / s.model.adapter_name),
-        ("mlx adapter", s.paths.models / f"{s.model.adapter_name}-mlx"),
+        *[(f"{b} adapter", _adapter_or_none(s, b) or s.paths.models / f"{s.model.adapter_name}-…") for b in ("cuda", "mlx")],
     ]:
         console.print(f"{label:>13}: {'✓' if p.exists() else '✗'} {p}")
     console.print(f"    inference: {s.inference.base_url}")

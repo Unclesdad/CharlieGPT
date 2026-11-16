@@ -1,5 +1,6 @@
 # Ubuntu + RTX 3090:  docker compose -f deploy/docker-compose.yml up -d
-# Needs Docker + the NVIDIA Container Toolkit. Train first so ../models/charlie exists.
+# Needs Docker + the NVIDIA Container Toolkit. Train first so ../models/charlie-latest exists.
+# Serve an older run with: ADAPTER=charlie-2026-11-15_14-32-05 docker compose -f deploy/docker-compose.yml up -d
 name: charliegpt
 
 x-gpu: &gpu
@@ -24,7 +25,7 @@ services:
     command: >
       --model Qwen/Qwen3-14B-AWQ --served-model-name qwen3-14b
       --max-model-len 8192 --gpu-memory-utilization 0.70
-      --enable-lora --max-lora-rank 32 --lora-modules charlie=/models/charlie
+      --enable-lora --max-lora-rank 32 --lora-modules charlie=/models/${ADAPTER:-charlie-latest}
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 15s

@@ -58,6 +58,7 @@ class ModelCfg(BaseModel):
     served_base_name: str = "qwen3-14b"
     mlx_base: str = "mlx-community/Qwen3-8B-4bit"
     adapter_name: str = "charlie"
+    adapter: str = "latest"  # which training run to serve: "latest" or a name from `charliegpt models`
     max_seq_length: int = 4096
 
 

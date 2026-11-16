@@ -146,17 +146,23 @@ Discord attachments are CDN links that expire within about a day, so they can't 
 ```bash
 charliegpt train                 # auto: Unsloth on CUDA, mlx-lm on Mac
 charliegpt train --merge         # (CUDA) also save a merged 16-bit model
+charliegpt models                # list runs; → marks the one `serve` will use
 ```
 
-To run the 3090-trained 14B on the Mac: `train --merge`, copy `models/charlie-merged` over, then `mlx_lm convert --hf-path models/charlie-merged -q`. The easier route is to point the Mac at the Ubuntu server.
+Each run gets its own folder named for when it started, e.g. `models/charlie-2026-11-15_14-32-05` (`charlie-mlx-…` on the Mac), so retraining never overwrites an older model. A run only shows up once it has finished saving.
+
+To run the 3090-trained 14B on the Mac: `train --merge`, copy `models/<run>-merged` over, then `mlx_lm convert --hf-path models/<run>-merged -q`. The easier route is to point the Mac at the Ubuntu server.
 
 ## 4. Serve + try it
 
 ```bash
 charliegpt serve           # vLLM on :8000 (models "charlie" and "qwen3-14b"), or mlx_lm server on Mac
+charliegpt serve -m charlie-2026-11-15_14-32-05   # serve an older run instead of the newest
 charliegpt chat            # text it yourself
 charliegpt bench           # p50/p95 latency; target < 20s
 ```
+
+`serve` uses the newest run unless you pass `--model` or set `model.adapter` in the config. The model is still called `charlie` on the server, so the chat and the bots don't need to know which run it is.
 
 ## 5. Bots
 

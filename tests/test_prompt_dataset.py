@@ -106,3 +106,42 @@ def test_targets_never_teach_media_placeholders(dm, settings):
     exs = examples_for(dm, settings, None, None, random.Random(0))
     assert [e["messages"][-1]["content"] for e in exs] == ["whats good"]
     assert "[image]" not in exs[0]["messages"][-1]["content"]
+
+
+def test_training_runs_named_by_start_and_latest_served(tmp_path, settings):
+    from datetime import datetime
+
+    import pytest
+
+    from charliegpt.cli import serve_command
+    from charliegpt.train.runs import find_adapter, link_latest, list_runs, new_run_dir
+
+    models = tmp_path / "models"
+    assert find_adapter(models, "charlie", "cuda") is None
+    (models / "charlie").mkdir(parents=True)  # adapter from before runs were timestamped
+    assert find_adapter(models, "charlie", "cuda") == models / "charlie"
+
+    old = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 1, 9, 5))
+    new = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 15, 14, 32, 5))
+    unfinished = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 16))
+    mlx = new_run_dir(models, "charlie", "mlx", datetime(2026, 12, 1))
+    assert new.name == "charlie-2026-11-15_14-32-05" and mlx.name == "charlie-mlx-2026-12-01_00-00-00"
+    for run, done in [(old, "adapter_config.json"), (new, "adapter_config.json"), (mlx, "adapters.safetensors")]:
+        run.mkdir()
+        (run / done).write_text("{}")
+    (unfinished / "checkpoints").mkdir(parents=True)  # still training: never served
+    (models / f"{new.name}-merged").mkdir()
+
+    assert list_runs(models, "charlie", "cuda") == [old, new]
+    assert find_adapter(models, "charlie", "cuda") == new
+    assert find_adapter(models, "charlie", "mlx") == mlx
+    assert find_adapter(models, "charlie", "cuda", old.name) == old
+    with pytest.raises(FileNotFoundError):
+        find_adapter(models, "charlie", "cuda", "charlie-1999-01-01_00-00-00")
+    assert link_latest(new).resolve() == new.resolve() and link_latest(old).name == "charlie-latest"
+    assert list_runs(models, "charlie", "cuda") == [old, new]  # the symlink isn't a run
+
+    settings.paths.models = models
+    assert f"charlie={new}" in serve_command(settings, "cuda")
+    settings.model.adapter = old.name
+    assert f"charlie={old}" in serve_command(settings, "cuda")
