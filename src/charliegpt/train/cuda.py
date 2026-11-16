@@ -61,6 +61,10 @@ def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = 
             eval_steps=t.eval_steps,
             save_steps=t.eval_steps,
             save_total_limit=3,
+            # Overfitting shows up as eval loss rising late in training; keep the best checkpoint, not the last.
+            load_best_model_at_end="validation" in ds,
+            metric_for_best_model="eval_loss",
+            greater_is_better=False,
             seed=settings.dataset.seed,
             report_to="none",
         ),

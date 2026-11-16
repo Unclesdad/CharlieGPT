@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import re
 from datetime import datetime
 from pathlib import Path
@@ -24,19 +25,30 @@ CLASSIFY_PROMPT = """Message(s) someone just sent to {me}:
 Are they asking {me} to commit to something: make plans, meet up, come somewhere, do a favor, \
 lend or pay money, or promise anything? Answer with exactly YES or NO."""
 
-EXCUSE_PROMPT = """You are {me}, texting. They just said:
+EXCUSE_PROMPT = """{me} just got this text:
 \"\"\"
 {text}
 \"\"\"
-They want you to commit to something. Don't agree. Decline with the most absurd, over-the-top, \
-obviously made-up excuse imaginable, totally deadpan, in the same vibe as \
-"sorry i cant i have to ride my horse into the sunset" or "i want to but the king of atlantis has sent me on a quest" \
-(but invent a new one, never reuse those).
+Write {me}'s reply. {me} won't commit, so the reply declines with one absurd, over-the-top, \
+obviously made-up excuse, totally deadpan, like "sorry i cant i have to ride my horse into the sunset" \
+or "i want to but the king of atlantis has sent me on a quest" (invent a new one, never reuse those).
+Keep it to one short text, under 20 words, no explanation after the excuse.
 
-This is how {me} texts, match it exactly (casing, punctuation, slang, emoji):
+For tone only (don't repeat these), here are some real texts {me} has sent:
+\"\"\"
 {style}
+\"\"\"
 
-Reply with only the text message. For more than one text, put {bubble} between them."""
+Reply with only the text {me} sends, nothing else."""
+
+# Last resort, so a failed generation never turns into a yes.
+FALLBACK_EXCUSES = [
+    "cant the council of geese has summoned me",
+    "i would but im legally required to guard a lighthouse that day",
+    "no can do my horse is riding me into the sunset this time",
+    "sorry the king of atlantis moved my quest up",
+    "cant im getting knighted by a raccoon",
+]
 
 AI_LEAK = re.compile(r"\b(as an ai|an ai (language )?model|language model|i'?m an ai|i am an ai|openai|anthropic|qwen|chatgpt)\b", re.I)
 
@@ -69,10 +81,18 @@ async def needs_excuse(client, me: str, text: str) -> bool:
 
 
 async def absurd_excuse(client, me: str, text: str, style_examples: list[str]) -> list[str]:
-    style = "\n".join(f"- {s}" for s in style_examples[-12:]) or "- (casual, lowercase)"
-    prompt = EXCUSE_PROMPT.format(me=me, text=text, style=style, bubble=BUBBLE)
-    raw = await client.helper([{"role": "user", "content": prompt}], temperature=1.0, max_tokens=120)
-    return split_bubbles(raw.strip().strip('"'), me)
+    # Flatten multi-bubble examples and keep short ones: they show tone without inviting a copy.
+    samples = [b for ex in style_examples for b in split_bubbles(ex, me) if len(b) <= 80][-10:]
+    prompt = EXCUSE_PROMPT.format(me=me, text=text, style="\n".join(samples) or "(casual, lowercase)")
+    raw = await client.helper([{"role": "user", "content": prompt}], temperature=0.9, max_tokens=60)
+    seen = {_norm(b) for b in samples}
+    bubbles = [b for b in (re.sub(r"^\s*[-•*]\s+", "", x).strip().strip('"') for x in split_bubbles(raw.replace("\n", BUBBLE), me)) if b]
+    bubbles = [b for b in bubbles if _norm(b) not in seen][:2]  # drop echoed examples
+    return bubbles or [random.choice(FALLBACK_EXCUSES)]
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"\W+", "", s.lower())
 
 
 def breaks_character(bubbles: list[str]) -> bool:

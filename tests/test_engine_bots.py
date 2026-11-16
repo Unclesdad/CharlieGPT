@@ -123,3 +123,19 @@ async def test_bot_human_takeover_and_kill_switch(dm, settings):
     await bot2.handle(meta, msg(3, False, "hello?", 0))
     await _settle(bot2)
     assert bot2.sent == []
+
+
+async def test_excuse_drops_echoed_style_and_list_bullets():
+    from charliegpt.infer.guardrails import FALLBACK_EXCUSES, absurd_excuse
+
+    class Echo:
+        def __init__(self, out):
+            self.out = out
+
+        async def helper(self, msgs, **kw):
+            return self.out
+
+    style = ["I was just looking at my watch", f"Yep{BUBBLE}Tomorrow I wanna leave at 10"]
+    out = f"I was just looking at my watch\n- Yep\n- cant my goldfish is running for mayor{BUBBLE}lol"
+    assert await absurd_excuse(Echo(out), "Charlie", "gym tmrw?", style) == ["cant my goldfish is running for mayor", "lol"]
+    assert (await absurd_excuse(Echo("Yep"), "Charlie", "gym tmrw?", style))[0] in FALLBACK_EXCUSES  # only echoes left

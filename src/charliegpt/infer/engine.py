@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -89,8 +90,9 @@ class ReplyEngine:
         if excuse_needed:
             style = [b for t in ctx.turns if t.is_me for b in t.bubbles()] + [e.me for e in ctx.examples]
             bubbles = await guardrails.absurd_excuse(self.client, me, incoming, style)
-            if bubbles and not guardrails.breaks_character(bubbles):
-                return bubbles[:MAX_BUBBLES]
+            if guardrails.breaks_character(bubbles):  # never fall through to a reply that might say yes
+                bubbles = [random.choice(guardrails.FALLBACK_EXCUSES)]
+            return bubbles
 
         bubbles = split_bubbles(raw, me)
         if not bubbles or guardrails.breaks_character(bubbles):
