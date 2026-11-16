@@ -25,8 +25,10 @@ def test_examples_target_bursts(dm, settings):
     assert len(exs) == 2
     first = exs[0]["messages"]
     assert first[0]["role"] == "system" and "DM with Alex" in first[0]["content"]
-    assert first[1] == {"role": "user", "content": "yo\nyou up?"}
+    assert first[1] == {"role": "user", "content": "Alex: yo\nAlex: you up?"}
     assert first[-1] == {"role": "assistant", "content": f"ya\n{BUBBLE}\nwhats good"}
+    assert [m["role"] for m in exs[1]["messages"]] == ["system", "user", "assistant"]  # history never in assistant turns
+    assert "Charlie: ya\nCharlie: whats good" in exs[1]["messages"][1]["content"]
 
 
 def test_train_inference_parity(dm, settings):
@@ -48,7 +50,7 @@ def test_group_names_gap_marker_and_media(dm, settings):
     out = build_messages(make_context(conv, turns, settings, now=m[4].timestamp))
     assert 'group chat "the boys"' in out[0]["content"]
     assert out[1]["content"].startswith("Alex: yo")
-    assert out[-1]["content"] == '[3 hours later]\nAlex: nm just bored [image: "a cat in a box"]'
+    assert out[-1]["content"].endswith('[3 hours later]\nAlex: nm just bored [image: "a cat in a box"]')
 
 
 def test_split_bubbles_drops_media_placeholders():

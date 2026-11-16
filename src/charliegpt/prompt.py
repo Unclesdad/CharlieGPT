@@ -77,22 +77,29 @@ def system_prompt(ctx: PromptContext) -> str:
     return "\n".join(lines)
 
 
-def build_messages(ctx: PromptContext) -> list[dict[str, str]]:
-    msgs: list[dict[str, str]] = [{"role": "system", "content": system_prompt(ctx)}]
+def transcript_lines(ctx: PromptContext) -> list[str]:
+    lines: list[str] = []
     prev_end: datetime | None = None
     for turn in ctx.turns:
-        content = render_turn(turn, ctx.is_group)
-        if not content:
+        bubbles = turn.bubbles()
+        if not bubbles:
             continue
         if prev_end and turn.start - prev_end > GAP_MARKER_AFTER:
-            content = f"[{_gap(turn.start - prev_end)}]\n{content}"
+            lines.append(f"[{_gap(turn.start - prev_end)}]")
         prev_end = turn.end
-        role = "assistant" if turn.is_me else "user"
-        if msgs[-1]["role"] == role:
-            msgs[-1]["content"] += (BUBBLE_JOIN if role == "assistant" else "\n") + content
-        else:
-            msgs.append({"role": role, "content": content})
-    return msgs
+        name = ctx.me if turn.is_me else turn.sender_name
+        lines += [f"{name}: {b}" for b in bubbles]
+    return lines
+
+
+def build_messages(ctx: PromptContext) -> list[dict[str, str]]:
+    """system + one user message holding the chat so far; the model's reply is the only assistant turn.
+
+    The history is a transcript, not alternating user/assistant turns: training only learns from
+    assistant turns, so putting your past texts there would train on each one many times over.
+    """
+    chat = "\n".join(transcript_lines(ctx)) or "(no messages yet)"
+    return [{"role": "system", "content": system_prompt(ctx)}, {"role": "user", "content": chat}]
 
 
 def truncate(ctx: PromptContext, max_chars: int) -> PromptContext:
