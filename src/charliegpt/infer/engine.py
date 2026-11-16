@@ -68,6 +68,7 @@ class ReplyEngine:
     async def reply(self, conv: Conversation, now: datetime | None = None) -> list[str]:
         """Bubbles to send in response to the latest messages, or [] to stay quiet."""
         s = self.settings
+        self.last_why = ""  # set when a guardrail replaced the model's reply (shown by `charliegpt chat`)
         await self.caption_new_images(conv)
         turns = group_turns(conv.messages, s.dataset.burst_gap_minutes)
         if not turns or turns[-1].is_me:
@@ -97,6 +98,7 @@ class ReplyEngine:
             bubbles = await guardrails.absurd_excuse(self.client, me, incoming, style, g)
             if leaks(bubbles) and g.fallback_excuses:  # never fall through to a reply that might say yes
                 bubbles = [random.choice(g.fallback_excuses)]
+            self.last_why = "excuse: looked like a request for plans/money/a favor (guardrails.commitment_excuses)"
             return bubbles
 
         bubbles = split_bubbles(raw, me)
@@ -107,6 +109,7 @@ class ReplyEngine:
         if bubbles and not bad(bubbles):
             return bubbles[:MAX_BUBBLES]
         if g.deflect_ai_questions and g.deflections and guardrails.ASKS_IF_AI.search(incoming):
+            self.last_why = "deflection: asked if it's an AI and every reply broke character (guardrails.deflect_ai_questions)"
             return [random.choice(g.deflections)]
         if bubbles:
             log.info("dropping reply in %s (out of character or a repeat)", conv.key)

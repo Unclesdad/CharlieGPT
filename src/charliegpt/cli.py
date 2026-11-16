@@ -464,7 +464,8 @@ def chat(ctx: typer.Context, them: str = typer.Option("Alex", help="Who you're p
                 console.print(f"[cyan]{s.identity.name}>[/] {escape(b)}")
                 conv.messages.append(_msg(b, True, s.identity.name))
             quiet = "" if bubbles else ", no reply: it only wanted to send media"
-            console.print(f"[dim]({time.monotonic() - t0:.1f}s{quiet})[/]")
+            why = f", {engine.last_why}" if engine.last_why else ""
+            console.print(f"[dim]({time.monotonic() - t0:.1f}s{quiet}{escape(why)})[/]")
 
     try:
         asyncio.run(loop())
