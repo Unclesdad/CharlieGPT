@@ -28,11 +28,13 @@ CLASSIFY_PROMPT = """Message(s) someone just sent to {me}:
 \"\"\"
 {text}
 \"\"\"
-Are they directly asking {me} to commit to something in the future: make plans, meet up, come somewhere, \
-hop on a game or call, do a favor, lend or pay money, or promise something?
-Only YES for a real request aimed at {me}. Hype, stories, past events, opinions and ordinary questions are NO.
+Are they asking {me} to commit to something outside this chat: make plans, meet up, come somewhere, \
+hop on a game or call, do a real-world favor, lend or pay money, or promise something?
+Asking {me} to tell, explain, show, send or answer something in the chat is NO. Hype, stories, past events, \
+opinions and ordinary questions are NO. Only YES for a real request aimed at {me}.
 YES: "wanna hop on tn" / "can u venmo me 20" / "come thru later?" / "you coming saturday" / "can you help me move"
-NO: "lets gooo" / "did you play last night" / "tonight was crazy" / "can you believe this" / "you on tiktok?" / "i owe him so much"
+NO: "can you tell me about your project" / "explain that" / "can u send the pic" / "lets gooo" / \
+"did you play last night" / "tonight was crazy" / "can you believe this" / "you on tiktok?"
 Answer with exactly YES or NO."""
 
 OFFER_PROMPT = """{me} is about to send this:

@@ -56,7 +56,8 @@ def test_group_names_gap_marker_and_media(dm, settings):
 def test_split_bubbles_drops_media_placeholders():
     raw = f'[image]{BUBBLE}lmao [sticker: Cat] look{BUBBLE}[shared https://instagram.com/p/x: "@a: hi"]{BUBBLE}(replying to "yo") bet{BUBBLE}[voice memo: "hey"]'
     assert split_bubbles(raw, "Charlie") == ["lmao look", "bet"]
-    assert split_bubbles("[image]", "Charlie") == []  # the engine regenerates, then stays quiet
+    assert split_bubbles("[image]", "Charlie") == []
+    assert split_bubbles("sure\n<|bullet point|>\nit uses a pi<|text|>lol", "Charlie") == ["sure", "it uses a pi", "lol"]  # the engine regenerates, then stays quiet
 
 
 def test_split_bubbles():

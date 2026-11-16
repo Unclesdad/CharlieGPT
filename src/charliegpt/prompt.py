@@ -121,7 +121,8 @@ def split_bubbles(text: str, me: str) -> list[str]:
     text = _THINK.sub("", text).replace("<|im_end|>", "")
     prefix = re.compile(rf"^\s*{re.escape(me)}\s*:\s*", re.I)
     out = []
-    for part in text.split(BUBBLE):
+    # The model sometimes invents its own separator (<|bullet point|>, <|text|>); treat any <|...|> as a break.
+    for part in re.split(r"<\|[^|<>\n]{1,30}\|>", text):
         part = re.sub(r"[ \t]{2,}", " ", _MEDIA.sub("", prefix.sub("", part.strip()))).strip()
         if part:
             out.append(part)
