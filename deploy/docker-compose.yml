@@ -39,7 +39,7 @@ services:
     command: >
       --model Qwen/Qwen2.5-VL-3B-Instruct-AWQ
       --max-model-len 4096 --gpu-memory-utilization 0.20
-      --limit-mm-per-prompt '{"image":1}'
+      --limit-mm-per-prompt '{"image":1}' --mm-processor-kwargs '{"max_pixels":1003520}'
     depends_on:
       inference: { condition: service_healthy }  # start after the big one claims its memory
 

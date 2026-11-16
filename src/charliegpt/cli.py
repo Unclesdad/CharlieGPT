@@ -279,7 +279,8 @@ def train(
 def vision_serve_command(s: Settings) -> list[str]:
     v = s.vision
     return ["vllm", "serve", v.model, "--host", "0.0.0.0", "--port", str(v.port), "--max-model-len", "4096",
-            "--gpu-memory-utilization", str(v.gpu_memory_utilization), "--limit-mm-per-prompt", json.dumps({"image": 1})]  # fmt: skip
+            "--gpu-memory-utilization", str(v.gpu_memory_utilization), "--limit-mm-per-prompt", json.dumps({"image": 1}),
+            "--mm-processor-kwargs", json.dumps({"max_pixels": 1280 * 28 * 28})]  # fmt: skip  # cap image tokens server-side too
 
 
 def serve_command(s: Settings, backend: str) -> list[str]:

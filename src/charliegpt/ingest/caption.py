@@ -8,7 +8,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import mimetypes
 import threading
 from pathlib import Path
 from typing import Iterable, Protocol
@@ -26,14 +25,14 @@ class Captioner(Protocol):
     def caption(self, path: Path) -> str: ...
 
 
+MAX_SIDE = 896  # Qwen2.5-VL spends ~1 token per 28x28 patch; a full-size phone photo is ~16k tokens
+
+
 def _to_jpeg_bytes(path: Path) -> tuple[bytes, str]:
-    """HEIC (iPhone) and other formats -> JPEG so any backend can read them."""
-    mime = mimetypes.guess_type(path.name)[0] or ""
-    if mime in ("image/jpeg", "image/png", "image/webp"):
-        return path.read_bytes(), mime
+    """Any format (incl. iPhone HEIC) -> downscaled JPEG, so every backend can read it and it fits the context."""
     from io import BytesIO
 
-    from PIL import Image
+    from PIL import Image, ImageOps
 
     try:
         from pillow_heif import register_heif_opener
@@ -41,8 +40,10 @@ def _to_jpeg_bytes(path: Path) -> tuple[bytes, str]:
         register_heif_opener()
     except ImportError:
         pass
+    img = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+    img.thumbnail((MAX_SIDE, MAX_SIDE))
     buf = BytesIO()
-    Image.open(path).convert("RGB").save(buf, "JPEG", quality=90)
+    img.save(buf, "JPEG", quality=88)
     return buf.getvalue(), "image/jpeg"
 
 
