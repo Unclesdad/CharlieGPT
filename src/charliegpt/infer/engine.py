@@ -84,25 +84,28 @@ class ReplyEngine:
         incoming = render_turn(turns[-1], conv.is_group)
         me = s.identity.name
 
+        g = s.guardrails
+        leaks = guardrails.breaks_character if g.ai_leak_filter else (lambda _: False)
+
         # Classify and generate concurrently; the classifier only costs latency when it fires.
-        check = guardrails.needs_excuse(self.client, me, incoming) if s.guardrails.commitment_excuses else asyncio.sleep(0, False)
+        check = guardrails.needs_excuse(self.client, me, incoming) if g.commitment_excuses else asyncio.sleep(0, False)
         excuse_needed, raw = await asyncio.gather(check, self.client.persona(build_messages(ctx)))
         if excuse_needed:
             style = [b for t in ctx.turns if t.is_me for b in t.bubbles()] + [e.me for e in ctx.examples]
-            bubbles = await guardrails.absurd_excuse(self.client, me, incoming, style)
-            if guardrails.breaks_character(bubbles):  # never fall through to a reply that might say yes
-                bubbles = [random.choice(guardrails.FALLBACK_EXCUSES)]
+            bubbles = await guardrails.absurd_excuse(self.client, me, incoming, style, g)
+            if leaks(bubbles) and g.fallback_excuses:  # never fall through to a reply that might say yes
+                bubbles = [random.choice(g.fallback_excuses)]
             return bubbles
 
         bubbles = split_bubbles(raw, me)
         for _ in range(2):  # regenerate if empty (media-only) or out of character
-            if bubbles and not guardrails.breaks_character(bubbles):
+            if bubbles and not leaks(bubbles):
                 return bubbles[:MAX_BUBBLES]
             bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
-        if bubbles and not guardrails.breaks_character(bubbles):
+        if bubbles and not leaks(bubbles):
             return bubbles[:MAX_BUBBLES]
-        if guardrails.ASKS_IF_AI.search(incoming):
-            return [random.choice(guardrails.DEFLECTIONS)]
+        if g.deflect_ai_questions and g.deflections and guardrails.ASKS_IF_AI.search(incoming):
+            return [random.choice(g.deflections)]
         if bubbles:
             log.info("dropping out-of-character reply in %s", conv.key)
         return []

@@ -158,6 +158,19 @@ Behavior (all in `bots:` config):
 - stays in character; replies that leak "as an AI" are regenerated or dropped
 - **commitments** (plans, money, favors) get an absurd excuse instead of a yes
 
+The personality guardrails are all toggles under `guardrails:` in `configs/default.yaml`:
+
+| Setting | Default | What it does |
+|---|---|---|
+| `commitment_excuses` | `true` | Decline plans/money/favors with an absurd excuse |
+| `excuse_random_words` | `2` | Each excuse must use N random English nouns/verbs, so it doesn't drift to the model's favorite clichés (`0` = model's choice) |
+| `excuse_examples` | horse / Atlantis | Tone references for the excuse writer |
+| `fallback_excuses` | 5 canned excuses | Used if generation fails, so a plan never turns into a yes |
+| `ai_leak_filter` | `true` | Regenerate, then drop, replies that sound like a bot |
+| `deflect_ai_questions` | `true` | "are you an ai" gets a short brush-off (from `deflections`) when the model can't stay in character |
+
+The random words come from [WordNet](https://wordnet.princeton.edu/) (45k single-word nouns and verbs, Princeton WordNet license), with slurs and obscene senses removed, in `src/charliegpt/infer/words.txt.gz`. The persona model itself isn't filtered: it swears exactly as much as your texts do.
+
 ### Run in the background
 
 **Ubuntu (3090):** Docker + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)

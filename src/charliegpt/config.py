@@ -134,7 +134,29 @@ class InstagramCfg(BaseModel):
 
 
 class GuardrailsCfg(BaseModel):
+    # Plans, money, favors -> decline with an absurd excuse instead of agreeing.
     commitment_excuses: bool = True
+    # Build each excuse around this many random English nouns/verbs (0 = let the model pick, which drifts to unicorns).
+    excuse_random_words: int = 2
+    # Tone references for the excuse writer (it's told never to reuse them).
+    excuse_examples: list[str] = Field(
+        default_factory=lambda: ["sorry i cant i have to ride my horse into the sunset", "i want to but the king of atlantis has sent me on a quest"]
+    )
+    # Used when generation fails, so a commitment never turns into a yes.
+    fallback_excuses: list[str] = Field(
+        default_factory=lambda: [
+            "cant the council of geese has summoned me",
+            "i would but im legally required to guard a lighthouse that day",
+            "no can do my horse is riding me into the sunset this time",
+            "sorry the king of atlantis moved my quest up",
+            "cant im getting knighted by a raccoon",
+        ]
+    )
+    # Regenerate (then drop) replies that talk like a bot ("as an AI", "chatbot", "my code"...).
+    ai_leak_filter: bool = True
+    # When they ask "are you an AI" and the model can't answer in character, brush it off with one of these.
+    deflect_ai_questions: bool = True
+    deflections: list[str] = Field(default_factory=lambda: ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"])
 
 
 class Settings(BaseModel):

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import functools
+import gzip
 import random
 import re
 from datetime import datetime
 from pathlib import Path
 
+from charliegpt.config import GuardrailsCfg
 from charliegpt.prompt import BUBBLE, split_bubbles
 
 # Cheap prefilter so the classifier only runs when a message might be asking for something.
@@ -30,10 +33,10 @@ EXCUSE_PROMPT = """{me} just got this text:
 {text}
 \"\"\"
 Write {me}'s reply. {me} won't commit, so the reply declines with one absurd, over-the-top, \
-obviously made-up excuse, totally deadpan, like "sorry i cant i have to ride my horse into the sunset" \
-or "i want to but the king of atlantis has sent me on a quest" (invent a new one, never reuse those).
+obviously made-up excuse, totally deadpan. The vibe (invent a new one, never reuse these): {examples}.{words}
 Keep it to one short casual text, under 20 words: no apology, no "I'm sorry, but", no period at the end, \
-no explanation after the excuse. It should read like a quick text, e.g. "cant im ...".
+no explanation after the excuse. It should read like a quick text, e.g. "cant im ...". \
+Swearing is fine if it fits how {me} texts.
 
 For tone only (don't repeat these), here are some real texts {me} has sent:
 \"\"\"
@@ -42,14 +45,8 @@ For tone only (don't repeat these), here are some real texts {me} has sent:
 
 Reply with only the text {me} sends, nothing else."""
 
-# Last resort, so a failed generation never turns into a yes.
-FALLBACK_EXCUSES = [
-    "cant the council of geese has summoned me",
-    "i would but im legally required to guard a lighthouse that day",
-    "no can do my horse is riding me into the sunset this time",
-    "sorry the king of atlantis moved my quest up",
-    "cant im getting knighted by a raccoon",
-]
+WORDS_HINT = "\nThe excuse must be built around these words: {words}. Use each one (any form of the word is fine)."
+WORDS_FILE = Path(__file__).with_name("words.txt.gz")  # English nouns + verbs from WordNet, offensive senses removed
 
 # Anything that sounds like a bot talking about being a bot. Broad on purpose: a dropped reply just gets regenerated.
 AI_LEAK = re.compile(
@@ -65,9 +62,6 @@ ASKS_IF_AI = re.compile(
     r"(ai|bot|chat ?gpt) (is )?(texting|replying|answering)|chat ?gpt)\b",
     re.I,
 )
-# Short, in-character answers when the model can't stop talking like a bot.
-DEFLECTIONS = ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"]
-
 
 class KillSwitch:
     def __init__(self, state_dir: Path):
@@ -96,15 +90,42 @@ async def needs_excuse(client, me: str, text: str) -> bool:
     return answer.strip().upper().startswith("YES")
 
 
-async def absurd_excuse(client, me: str, text: str, style_examples: list[str]) -> list[str]:
+@functools.cache
+def _words() -> list[str]:
+    with gzip.open(WORDS_FILE, "rt", encoding="utf-8") as f:
+        return f.read().split()
+
+
+def random_words(n: int) -> list[str]:
+    """n words drawn uniformly from every English noun and verb."""
+    return [random.choice(_words()) for _ in range(n)]
+
+
+def _uses(text: str, word: str) -> bool:
+    # Loose match so "rescuing" counts for "rescue" and "geese" doesn't need to be exact for "goose" (stem only).
+    return word[: max(4, len(word) - 3)].lower() in text.lower()
+
+
+async def absurd_excuse(client, me: str, text: str, style_examples: list[str], cfg: GuardrailsCfg) -> list[str]:
     # Flatten multi-bubble examples and keep short ones: they show tone without inviting a copy.
     samples = [b for ex in style_examples for b in split_bubbles(ex, me) if len(b) <= 80][-10:]
-    prompt = EXCUSE_PROMPT.format(me=me, text=text, style="\n".join(samples) or "(casual, lowercase)")
-    raw = await client.helper([{"role": "user", "content": prompt}], temperature=0.9, max_tokens=60)
     seen = {_norm(b) for b in samples}
-    bubbles = [b for b in (re.sub(r"^\s*[-•*]\s+", "", x).strip().strip('"') for x in split_bubbles(raw.replace("\n", BUBBLE), me)) if b]
-    bubbles = [_casual(b) for b in bubbles if _norm(b) not in seen][:2]  # drop echoed examples
-    return [b for b in bubbles if b] or [random.choice(FALLBACK_EXCUSES)]
+    words = random_words(cfg.excuse_random_words)
+    prompt = EXCUSE_PROMPT.format(
+        me=me,
+        text=text,
+        examples=" / ".join(f'"{e}"' for e in cfg.excuse_examples) or '"cant i have to ride my horse into the sunset"',
+        words=WORDS_HINT.format(words=", ".join(f'"{w}"' for w in words)) if words else "",
+        style="\n".join(samples) or "(casual, lowercase)",
+    )
+    bubbles: list[str] = []
+    for _ in range(2):  # retry once if it ignored the words
+        raw = await client.helper([{"role": "user", "content": prompt}], temperature=0.9, max_tokens=60)
+        bubbles = [b for b in (re.sub(r"^\s*[-•*]\s+", "", x).strip().strip('"') for x in split_bubbles(raw.replace("\n", BUBBLE), me)) if b]
+        bubbles = [c for c in (_casual(b) for b in bubbles if _norm(b) not in seen) if c][:2]  # drop echoed examples
+        if bubbles and all(_uses(" ".join(bubbles), w) for w in words):
+            break
+    return bubbles or [random.choice(cfg.fallback_excuses or ["cant my horse needs me"])]
 
 
 def _casual(text: str) -> str:

@@ -126,7 +126,11 @@ async def test_bot_human_takeover_and_kill_switch(dm, settings):
 
 
 async def test_excuse_drops_echoed_style_and_list_bullets():
-    from charliegpt.infer.guardrails import FALLBACK_EXCUSES, absurd_excuse
+    from charliegpt.config import GuardrailsCfg
+    from charliegpt.infer.guardrails import absurd_excuse
+
+    cfg = GuardrailsCfg(excuse_random_words=0)
+    FALLBACK_EXCUSES = cfg.fallback_excuses
 
     class Echo:
         def __init__(self, out):
@@ -137,8 +141,8 @@ async def test_excuse_drops_echoed_style_and_list_bullets():
 
     style = ["I was just looking at my watch", f"Yep{BUBBLE}Tomorrow I wanna leave at 10"]
     out = f"I was just looking at my watch\n- Yep\n- cant my goldfish is running for mayor{BUBBLE}lol"
-    assert await absurd_excuse(Echo(out), "Charlie", "gym tmrw?", style) == ["cant my goldfish is running for mayor", "lol"]
-    assert (await absurd_excuse(Echo("Yep"), "Charlie", "gym tmrw?", style))[0] in FALLBACK_EXCUSES  # only echoes left
+    assert await absurd_excuse(Echo(out), "Charlie", "gym tmrw?", style, cfg) == ["cant my goldfish is running for mayor", "lol"]
+    assert (await absurd_excuse(Echo("Yep"), "Charlie", "gym tmrw?", style, cfg))[0] in FALLBACK_EXCUSES  # only echoes left
 
 
 def test_leaks_and_casual_excuses():
@@ -152,9 +156,47 @@ def test_leaks_and_casual_excuses():
 
 
 async def test_engine_deflects_ai_question_when_model_keeps_leaking(dm, settings):
-    from charliegpt.infer.guardrails import DEFLECTIONS
-
+    DEFLECTIONS = settings.guardrails.deflections
     c = FakeClient(persona="I am more than my code. I am a chatbot")
     conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "are you ai", 60)]})
     out = await engine(settings, c).reply(conv)
     assert len(out) == 1 and out[0] in DEFLECTIONS
+
+
+def test_random_words_are_uniform_nouns_and_verbs():
+    from charliegpt.infer.guardrails import _words, random_words
+
+    words = _words()
+    assert len(words) > 40000 and len(set(words)) == len(words)  # deduped, so each word is equally likely
+    assert {"dog", "run", "lighthouse"} <= set(words) and all(w.isalpha() and w.islower() for w in words[:1000])
+    assert len(random_words(2)) == 2 and random_words(0) == []
+
+
+async def test_excuse_prompt_uses_random_words_and_retries(settings):
+    from charliegpt.infer import guardrails
+
+    class Seq:
+        def __init__(self, outs):
+            self.outs, self.prompts = list(outs), []
+
+        async def helper(self, msgs, **kw):
+            self.prompts.append(msgs[0]["content"])
+            return self.outs.pop(0)
+
+    guardrails.random_words, orig = (lambda n: ["walrus", "embezzle"][:n]), guardrails.random_words
+    try:
+        c = Seq(["cant my horse needs me", "cant a walrus is embezzling my savings"])
+        out = await guardrails.absurd_excuse(c, "Charlie", "gym tmrw?", [], settings.guardrails)
+        assert out == ["cant a walrus is embezzling my savings"] and len(c.prompts) == 2  # first ignored the words
+        assert '"walrus", "embezzle"' in c.prompts[0]
+    finally:
+        guardrails.random_words = orig
+
+
+async def test_toggles_off(dm, settings):
+    s = settings.model_copy(deep=True)
+    s.guardrails.ai_leak_filter = False
+    s.guardrails.commitment_excuses = False
+    c = FakeClient(persona="im a chatbot lol", commitment="YES")
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "wanna hang tomorrow", 60)]})
+    assert await engine(s, c).reply(conv) == ["im a chatbot lol"] and "excuse" not in c.calls
