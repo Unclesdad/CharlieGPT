@@ -18,7 +18,7 @@ from charliegpt.context import make_context
 from charliegpt.ingest.normalize import group_turns
 from charliegpt.memory.profiles import ProfileStore
 from charliegpt.memory.rag import Retriever
-from charliegpt.prompt import build_messages, format_target
+from charliegpt.prompt import BUBBLE_JOIN, build_messages, format_target, split_bubbles
 from charliegpt.schema import Conversation
 
 
@@ -48,7 +48,9 @@ def examples_for(
     for i, turn in enumerate(turns):
         if not turn.is_me or i < ds.min_history_turns or turns[i - 1].is_me:
             continue
-        target = format_target(turn)
+        # Bots can't send [image]/[sticker] placeholders, so don't teach them: drop media-only replies,
+        # strip placeholders from mixed ones. (They stay in the history, so the model still sees media.)
+        target = BUBBLE_JOIN.join(split_bubbles(format_target(turn), settings.identity.name))
         if not target:
             continue
         k = 0 if rng.random() < ds.rag_dropout else ds.rag_k

@@ -95,3 +95,14 @@ async def test_profiles_concurrent_and_resumable(tmp_path):
     assert await build_profiles(convs, store, complete, "Charlie", min_messages=1, concurrency=2) == 5
     again = ProfileStore(tmp_path / "profiles.json")  # reloaded from disk
     assert await build_profiles(convs, again, complete, "Charlie", min_messages=1) == 0 and len(calls) == 5
+
+
+def test_targets_never_teach_media_placeholders(dm, settings):
+    import random
+
+    m = dm.messages
+    m[2].text, m[2].attachments = "", [Attachment(kind=AttachmentKind.image)]  # first reply: a photo, then "whats good"
+    m[5].text, m[5].attachments = "", [Attachment(kind=AttachmentKind.sticker, name="Cat")]  # second reply: sticker only
+    exs = examples_for(dm, settings, None, None, random.Random(0))
+    assert [e["messages"][-1]["content"] for e in exs] == ["whats good"]
+    assert "[image]" not in exs[0]["messages"][-1]["content"]
