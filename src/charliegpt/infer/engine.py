@@ -101,13 +101,17 @@ class ReplyEngine:
             self.last_why = "excuse: looked like a request for plans/money/a favor (guardrails.commitment_excuses)"
             return bubbles
 
-        bubbles = split_bubbles(raw, me)
-        for _ in range(2):  # regenerate if empty (media-only), out of character, or a repeat
+        bubbles, brushoff = split_bubbles(raw, me), None
+        for attempt in range(3):  # regenerate if empty (media-only), out of character, a repeat, or a non-answer
             if bubbles and not bad(bubbles):
-                return bubbles[:MAX_BUBBLES]
-            bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
-        if bubbles and not bad(bubbles):
-            return bubbles[:MAX_BUBBLES]
+                if not (g.no_brushoffs and guardrails.brushes_off(bubbles, incoming)):
+                    return bubbles[:MAX_BUBBLES]
+                brushoff = brushoff or bubbles
+            if attempt < 2:
+                bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
+        if brushoff:
+            self.last_why = "non-answer: all 3 tries dodged the question (guardrails.no_brushoffs)"
+            return brushoff[:MAX_BUBBLES]
         if g.deflect_ai_questions and g.deflections and guardrails.ASKS_IF_AI.search(incoming):
             self.last_why = "deflection: asked if it's an AI and every reply broke character (guardrails.deflect_ai_questions)"
             return [random.choice(g.deflections)]

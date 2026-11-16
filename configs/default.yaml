@@ -101,5 +101,6 @@ guardrails:
     - cant im getting knighted by a raccoon
   ai_leak_filter: true           # regenerate/drop replies that sound like a bot, or say "y" to "are you an ai"
   no_repeats: true               # regenerate replies identical to one of the last 3 (stops "y" loops)
+  no_brushoffs: true             # regenerate "hi" / "what" / "huh" when they asked a question
   deflect_ai_questions: true     # "are you an ai" -> a short brush-off when the model can't stay in character
   deflections: ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"]

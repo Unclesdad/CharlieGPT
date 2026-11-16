@@ -165,6 +165,8 @@ class GuardrailsCfg(BaseModel):
     ai_leak_filter: bool = True
     # Regenerate a reply that's identical to one of your last 3 (stops loops like "y", "y", "y").
     no_repeats: bool = True
+    # Regenerate "hi" / "what" / "huh" / "hi im charlie" when they asked a question (sent anyway if all 3 tries do it).
+    no_brushoffs: bool = True
     # When they ask "are you an AI" and the model can't answer in character, brush it off with one of these.
     deflect_ai_questions: bool = True
     deflections: list[str] = Field(default_factory=lambda: ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"])

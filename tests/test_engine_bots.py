@@ -217,3 +217,15 @@ async def test_no_repeat_loops(dm, settings):
     s = settings.model_copy(deep=True)
     s.guardrails.no_repeats = False
     assert await engine(s, c).reply(conv) == ["y"]
+
+
+async def test_brushoffs_regenerated_when_asked_a_question(dm, settings):
+    from charliegpt.infer.guardrails import brushes_off
+
+    assert brushes_off(["hi im charles"], "what are you doing saturday") and brushes_off(["huh"], "did u finish the hw")
+    assert not brushes_off(["hi"], "hey") and not brushes_off(["what", "no way thats crazy"], "guess who i saw?")
+    asked = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "how was the trip?", 60)]})
+    c = FakeClient(persona=["hi", "what", "it was sick we went hiking"])
+    assert await engine(settings, c).reply(asked) == ["it was sick we went hiking"]
+    e = engine(settings, FakeClient(persona="huh"))
+    assert await e.reply(asked) == ["huh"] and "non-answer" in e.last_why  # still sends something

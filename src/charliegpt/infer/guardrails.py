@@ -70,6 +70,17 @@ ASKS_IF_AI = re.compile(
     re.I,
 )
 
+# Replies that dodge a question: "hi", "hi im charlie", "what", "huh"...
+BRUSHOFF = re.compile(
+    r"^\W*(hi+|hey+|hello+|yo+|sup|wh?at+|wut|wdym|huh+|h+m+|idk|bro what|lmao what|(hi+|hey+),? (i['’]?m|it['’]?s|this is) \w+)\W*$",
+    re.I,
+)
+QUESTION = re.compile(
+    r"\?|\b(what|why|how|when|where|who|which|wyd|hbu|wbu)\b|\b(do|does|did|are|r|is|can|could|would|will|should|have|were) (you|u)\b",
+    re.I,
+)
+
+
 class KillSwitch:
     def __init__(self, state_dir: Path):
         self.flag = Path(state_dir) / "PAUSED"
@@ -155,3 +166,8 @@ def breaks_character(bubbles: list[str], incoming: str = "") -> bool:
 def repeats(bubbles: list[str], previous: list[str]) -> bool:
     """Same reply as one of the recent ones (whole burst, ignoring case and punctuation)."""
     return _norm(" ".join(bubbles)) in {_norm(p) for p in previous}
+
+
+def brushes_off(bubbles: list[str], incoming: str) -> bool:
+    """They asked something and every bubble is a non-answer."""
+    return bool(bubbles and QUESTION.search(incoming) and all(BRUSHOFF.match(b) for b in bubbles))
