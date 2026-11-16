@@ -10,8 +10,8 @@ from datetime import datetime
 from pathlib import Path
 
 STAMP = "%Y-%m-%d_%H-%M-%S"
-# A run only counts once training has written its final adapter (cuda) or at least one save (mlx).
-DONE = {"cuda": "adapter_config.json", "mlx": "adapters.safetensors"}
+# Written after the final save. Adapter files alone don't prove a run finished: a cancelled one can have them too.
+DONE = "TRAINED"
 
 
 def _tag(name: str, backend: str) -> str:
@@ -25,7 +25,7 @@ def new_run_dir(models: Path, name: str, backend: str, now: datetime | None = No
 def list_runs(models: Path, name: str, backend: str) -> list[Path]:
     """Finished runs, oldest first."""
     pattern = re.compile(rf"{re.escape(_tag(name, backend))}-\d{{4}}-\d\d-\d\d_\d\d-\d\d-\d\d")
-    runs = [p for p in Path(models).glob("*") if pattern.fullmatch(p.name) and (p / DONE[backend]).exists()]
+    runs = [p for p in Path(models).glob("*") if pattern.fullmatch(p.name) and (p / DONE).exists()]
     return sorted(runs, key=lambda p: p.name)
 
 
@@ -41,6 +41,10 @@ def find_adapter(models: Path, name: str, backend: str, choice: str | None = "la
         return runs[-1]
     legacy = Path(models) / _tag(name, backend)  # from before runs were timestamped
     return legacy if legacy.exists() else None
+
+
+def mark_done(run: Path) -> None:
+    (run / DONE).write_text(datetime.now().isoformat())
 
 
 def link_latest(run: Path) -> Path:

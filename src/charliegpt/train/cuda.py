@@ -10,7 +10,7 @@ from pathlib import Path
 from charliegpt.config import Settings
 
 
-def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = False) -> Path:
+def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = False, resume: bool = False) -> Path:
     # Unsloth must be imported before transformers/trl to patch them.
     from unsloth import FastLanguageModel  # isort: skip
     from unsloth.chat_templates import train_on_responses_only
@@ -71,7 +71,7 @@ def train_cuda(settings: Settings, data_dir: Path, out_dir: Path, merge: bool = 
     )
     # Loss only on your replies, never on other people's messages or the system prompt.
     trainer = train_on_responses_only(trainer, instruction_part="<|im_start|>user\n", response_part="<|im_start|>assistant\n")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=resume or None)  # True = the newest checkpoint in out_dir/checkpoints
 
     model.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))

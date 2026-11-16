@@ -254,6 +254,7 @@ def train(
     ctx: typer.Context,
     backend: str = typer.Option("auto", help="auto | cuda | mlx"),
     merge: bool = typer.Option(False, help="(cuda) also save a merged 16-bit model"),
+    resume: Optional[str] = typer.Option(None, "--resume", help="(cuda) continue a cancelled run from its last checkpoint, e.g. charlie-2026-11-15_21-25-54"),
 ):
     """Fine-tune: Unsloth QLoRA on CUDA, or mlx-lm LoRA on Apple Silicon."""
     s = S(ctx)
@@ -262,19 +263,28 @@ def train(
     if not (s.paths.dataset / "train.jsonl").exists():
         console.print("No dataset. Run `charliegpt build-dataset` first.")
         raise typer.Exit(1)
-    from charliegpt.train.runs import link_latest, new_run_dir
+    from charliegpt.train.runs import link_latest, mark_done, new_run_dir
 
-    run = new_run_dir(s.paths.models, s.model.adapter_name, backend)
-    console.print(f"training run: {run.name}")
+    if resume:
+        run = s.paths.models / resume
+        if backend != "cuda" or not any((run / "checkpoints").glob("checkpoint-*")):
+            console.print(f"No checkpoints to resume in {run} (CUDA runs save one every train.eval_steps steps).")
+            raise typer.Exit(1)
+        console.print(f"resuming training run: {run.name}")
+    else:
+        run = new_run_dir(s.paths.models, s.model.adapter_name, backend)
+        console.print(f"training run: {run.name}")
     if backend == "cuda":
         from charliegpt.train.cuda import train_cuda
 
-        out = train_cuda(s, s.paths.dataset, run, merge=merge)
+        out = train_cuda(s, s.paths.dataset, run, merge=merge, resume=bool(resume))
+        mark_done(out)
         link_latest(out)
     else:
         from charliegpt.train.mlx import train_mlx
 
         out = train_mlx(s, s.paths.dataset, run)
+        mark_done(out)
     console.print(f"[green]✓[/] adapter saved → {out}")
 
 

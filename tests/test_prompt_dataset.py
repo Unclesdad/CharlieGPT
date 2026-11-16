@@ -114,7 +114,7 @@ def test_training_runs_named_by_start_and_latest_served(tmp_path, settings):
     import pytest
 
     from charliegpt.cli import serve_command
-    from charliegpt.train.runs import find_adapter, link_latest, list_runs, new_run_dir
+    from charliegpt.train.runs import find_adapter, link_latest, list_runs, mark_done, new_run_dir
 
     models = tmp_path / "models"
     assert find_adapter(models, "charlie", "cuda") is None
@@ -126,10 +126,11 @@ def test_training_runs_named_by_start_and_latest_served(tmp_path, settings):
     unfinished = new_run_dir(models, "charlie", "cuda", datetime(2026, 11, 16))
     mlx = new_run_dir(models, "charlie", "mlx", datetime(2026, 12, 1))
     assert new.name == "charlie-2026-11-15_14-32-05" and mlx.name == "charlie-mlx-2026-12-01_00-00-00"
-    for run, done in [(old, "adapter_config.json"), (new, "adapter_config.json"), (mlx, "adapters.safetensors")]:
+    for run in (old, new, mlx):
         run.mkdir()
-        (run / done).write_text("{}")
-    (unfinished / "checkpoints").mkdir(parents=True)  # still training: never served
+        mark_done(run)
+    (unfinished / "checkpoints").mkdir(parents=True)  # cancelled or still training: never served,
+    (unfinished / "adapter_config.json").write_text("{}")  # even with adapter files in it
     (models / f"{new.name}-merged").mkdir()
 
     assert list_runs(models, "charlie", "cuda") == [old, new]

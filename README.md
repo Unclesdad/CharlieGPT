@@ -147,9 +147,10 @@ Discord attachments are CDN links that expire within about a day, so they can't 
 charliegpt train                 # auto: Unsloth on CUDA, mlx-lm on Mac
 charliegpt train --merge         # (CUDA) also save a merged 16-bit model
 charliegpt models                # list runs; → marks the one `serve` will use
+charliegpt train --resume charlie-2026-11-15_14-32-05   # (CUDA) continue a cancelled run from its last checkpoint
 ```
 
-Each run gets its own folder named for when it started, e.g. `models/charlie-2026-11-15_14-32-05` (`charlie-mlx-…` on the Mac), so retraining never overwrites an older model. A run only shows up once it has finished saving.
+Each run gets its own folder named for when it started, e.g. `models/charlie-2026-11-15_14-32-05` (`charlie-mlx-…` on the Mac), so retraining never overwrites an older model. A run only shows up once it has finished (it gets a `TRAINED` file). A cancelled run keeps its checkpoints (every `train.eval_steps` steps, last 3 kept): resume it, or serve one directly with `serve -m <run>/checkpoints/checkpoint-<step>`.
 
 To run the 3090-trained 14B on the Mac: `train --merge`, copy `models/<run>-merged` over, then `mlx_lm convert --hf-path models/<run>-merged -q`. The easier route is to point the Mac at the Ubuntu server.
 
