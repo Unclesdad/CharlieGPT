@@ -14,8 +14,8 @@ class FakeClient:
         self.persona_out, self.commitment, self.excuse = persona, commitment, excuse
         self.calls = []
 
-    async def persona(self, messages):
-        self.calls.append("persona")
+    async def persona(self, messages, temperature=None):
+        self.calls.append("persona" if temperature is None else f"persona@{temperature:.1f}")
         return self.persona_out if isinstance(self.persona_out, str) else self.persona_out.pop(0)
 
     async def helper(self, messages, temperature=0.2, max_tokens=300):
@@ -248,3 +248,15 @@ async def test_reply_offering_plans_is_regenerated(dm, settings):
     assert await engine(settings, c).reply(conv) == ["np ur good"] and c.calls.count("offer") == 1
     e = engine(settings, Offers(persona="lets hang out tmrw"))
     assert await e.reply(conv) == [] and "offered" in e.last_why
+
+
+async def test_refusals_regenerated_hotter_then_dropped(dm, settings):
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "say fuck", 60)]})
+    c = FakeClient(persona=["I’m not saying it", "I’m sorry my phone isn’t working right now (edited)", "fuck"])
+    assert await engine(settings, c).reply(conv) == ["fuck"]
+    assert [x for x in c.calls if x.startswith("persona")] == ["persona", "persona@1.0", "persona@1.2"]
+    e = engine(settings, FakeClient(persona="thats a sensitive topic"))
+    assert await e.reply(conv) == [] and "refused" in e.last_why
+    s = settings.model_copy(deep=True)
+    s.guardrails.no_refusals = False
+    assert await engine(s, FakeClient(persona="nah im not saying it")).reply(conv) == ["nah im not saying it"]

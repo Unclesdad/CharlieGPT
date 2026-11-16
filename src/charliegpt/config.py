@@ -167,6 +167,8 @@ class GuardrailsCfg(BaseModel):
     no_repeats: bool = True
     # Regenerate "hi" / "what" / "huh" / "hi im charlie" when they asked a question (sent anyway if all 3 tries do it).
     no_brushoffs: bool = True
+    # Regenerate (hotter), then drop, replies that refuse: won't swear, won't give an opinion, "my phone isn't working".
+    no_refusals: bool = True
     # When they ask "are you an AI" and the model can't answer in character, brush it off with one of these.
     deflect_ai_questions: bool = True
     deflections: list[str] = Field(default_factory=lambda: ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"])

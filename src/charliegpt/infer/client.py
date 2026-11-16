@@ -41,8 +41,8 @@ class LLMClient:
         assert err is not None
         raise err
 
-    async def persona(self, messages: list[dict]) -> str:
-        return await self.chat(messages, model=self.cfg.persona_model)
+    async def persona(self, messages: list[dict], temperature: float | None = None) -> str:
+        return await self.chat(messages, model=self.cfg.persona_model, temperature=temperature)
 
     async def helper(self, messages: list[dict], temperature: float = 0.2, max_tokens: int = 300) -> str:
         return await self.chat(messages, model=self.cfg.helper_model, temperature=temperature, max_tokens=max_tokens)

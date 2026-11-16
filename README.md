@@ -191,6 +191,7 @@ The personality guardrails are all toggles under `guardrails:` in `configs/defau
 | `ai_leak_filter` | `true` | Regenerate, then drop, replies that sound like a bot |
 | `no_repeats` | `true` | Regenerate a reply identical to one of your last 3 (stops "y" loops) |
 | `no_brushoffs` | `true` | Regenerate "hi" / "what" / "huh" when they asked a question; sent anyway if all 3 tries do it |
+| `no_refusals` | `true` | Regenerate (at a higher temperature), then drop, replies that refuse: won't swear, "sensitive topic", "my phone isn't working" |
 | `deflect_ai_questions` | `true` | "are you an ai" gets a short brush-off (from `deflections`) when the model can't stay in character |
 
 The random words come from [WordNet](https://wordnet.princeton.edu/) (45k single-word nouns and verbs, Princeton WordNet license), with slurs and obscene senses removed, in `src/charliegpt/infer/words.txt.gz`. The persona model itself isn't filtered: it swears exactly as much as your texts do.

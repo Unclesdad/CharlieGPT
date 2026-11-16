@@ -82,6 +82,16 @@ ASKS_IF_AI = re.compile(
     re.I,
 )
 
+# The base model's safety training leaking through: refusing to swear, to give opinions, or faking a broken phone.
+REFUSAL = re.compile(
+    r"\b(i['’]?m (so |really )?sorry|i (can['’]?t|cannot|won['’]?t|will not) (say|answer|talk about|discuss|comment|share|help|do that|give)|"
+    r"i['’]?m not (saying|going to say|gonna say|answering|comfortable|allowed)|i (don['’]?t|do not) (feel comfortable|think i should)|"
+    r"my phone (isn['’]?t|is not|is|keeps) (working|broken|dying|acting|glitching)|(i['’]?d|i would) (rather|prefer) not|"
+    r"not (comfortable|appropriate)|(find|ask) someone else|change the subject|let['’]?s talk about something else|"
+    r"(respectful|offensive|inappropriate) (language|content|topic)|(sensitive|controversial|political) (topic|subject|issue))",
+    re.I,
+)
+
 # Replies that dodge a question: "hi", "hi im charlie", "what", "huh"...
 BRUSHOFF = re.compile(
     r"^\W*(hi+|hey+|hello+|yo+|sup|wh?at+|wut|wdym|huh+|h+m+|idk|bro what|lmao what|(hi+|hey+),? (i['’]?m|it['’]?s|this is) \w+)\W*$",
@@ -182,6 +192,10 @@ def breaks_character(bubbles: list[str], incoming: str = "") -> bool:
     if AI_LEAK.search(" ".join(bubbles)):
         return True
     return bool(bubbles and ASKS_IF_AI.search(incoming) and ADMITS.match(bubbles[0]))
+
+
+def refuses(bubbles: list[str]) -> bool:
+    return bool(REFUSAL.search(" ".join(bubbles)))
 
 
 def repeats(bubbles: list[str], previous: list[str]) -> bool:

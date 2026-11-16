@@ -88,7 +88,8 @@ class ReplyEngine:
         g = s.guardrails
         leaks = (lambda b: guardrails.breaks_character(b, incoming)) if g.ai_leak_filter else (lambda _: False)
         recent = [" ".join(t.bubbles()) for t in turns if t.is_me][-3:]
-        bad = lambda b: leaks(b) or (g.no_repeats and guardrails.repeats(b, recent))  # noqa: E731
+        refused = lambda b: g.no_refusals and guardrails.refuses(b)  # noqa: E731
+        bad = lambda b: leaks(b) or refused(b) or (g.no_repeats and guardrails.repeats(b, recent))  # noqa: E731
 
         # Classify and generate concurrently; the classifier only costs latency when it fires.
         check = guardrails.needs_excuse(self.client, me, incoming) if g.commitment_excuses else asyncio.sleep(0, False)
@@ -112,7 +113,9 @@ class ReplyEngine:
                 else:
                     brushoff = brushoff or bubbles
             if attempt < 2:
-                bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
+                # A refusal is the base model's safety habit; sampling hotter usually gets past it.
+                hotter = s.inference.temperature + 0.2 * (attempt + 1) if bubbles and refused(bubbles) else None
+                bubbles = split_bubbles(await self.client.persona(build_messages(ctx), temperature=hotter), me)
         if brushoff:
             self.last_why = "non-answer: all 3 tries dodged the question (guardrails.no_brushoffs)"
             return brushoff
@@ -123,5 +126,6 @@ class ReplyEngine:
             self.last_why = "deflection: asked if it's an AI and every reply broke character (guardrails.deflect_ai_questions)"
             return [random.choice(g.deflections)]
         if bubbles:
-            log.info("dropping reply in %s (out of character or a repeat)", conv.key)
+            self.last_why = "quiet: every try refused, broke character, or repeated itself (guardrails)"
+            log.info("dropping reply in %s (refusal, out of character, or a repeat)", conv.key)
         return []
