@@ -85,7 +85,9 @@ class ReplyEngine:
         me = s.identity.name
 
         g = s.guardrails
-        leaks = guardrails.breaks_character if g.ai_leak_filter else (lambda _: False)
+        leaks = (lambda b: guardrails.breaks_character(b, incoming)) if g.ai_leak_filter else (lambda _: False)
+        recent = [" ".join(t.bubbles()) for t in turns if t.is_me][-3:]
+        bad = lambda b: leaks(b) or (g.no_repeats and guardrails.repeats(b, recent))  # noqa: E731
 
         # Classify and generate concurrently; the classifier only costs latency when it fires.
         check = guardrails.needs_excuse(self.client, me, incoming) if g.commitment_excuses else asyncio.sleep(0, False)
@@ -98,14 +100,14 @@ class ReplyEngine:
             return bubbles
 
         bubbles = split_bubbles(raw, me)
-        for _ in range(2):  # regenerate if empty (media-only) or out of character
-            if bubbles and not leaks(bubbles):
+        for _ in range(2):  # regenerate if empty (media-only), out of character, or a repeat
+            if bubbles and not bad(bubbles):
                 return bubbles[:MAX_BUBBLES]
             bubbles = split_bubbles(await self.client.persona(build_messages(ctx)), me)
-        if bubbles and not leaks(bubbles):
+        if bubbles and not bad(bubbles):
             return bubbles[:MAX_BUBBLES]
         if g.deflect_ai_questions and g.deflections and guardrails.ASKS_IF_AI.search(incoming):
             return [random.choice(g.deflections)]
         if bubbles:
-            log.info("dropping out-of-character reply in %s", conv.key)
+            log.info("dropping reply in %s (out of character or a repeat)", conv.key)
         return []

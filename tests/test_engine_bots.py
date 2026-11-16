@@ -58,6 +58,7 @@ async def test_engine_quiet_when_last_is_me(dm, settings):
 def test_commitment_prefilter():
     assert might_be_commitment("u free tmrw?")
     assert might_be_commitment("can you venmo me $20")
+    assert might_be_commitment("hop on the game tn") and might_be_commitment("u on later?")
     assert not might_be_commitment("lmao that's crazy")
 
 
@@ -200,3 +201,19 @@ async def test_toggles_off(dm, settings):
     c = FakeClient(persona="im a chatbot lol", commitment="YES")
     conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "wanna hang tomorrow", 60)]})
     assert await engine(s, c).reply(conv) == ["im a chatbot lol"] and "excuse" not in c.calls
+
+
+async def test_y_to_are_you_ai_is_a_leak(dm, settings):
+    c = FakeClient(persona="y")
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(99, False, "are you an ai", 60)]})
+    out = await engine(settings, c).reply(conv)
+    assert out[0] in settings.guardrails.deflections
+
+
+async def test_no_repeat_loops(dm, settings):
+    c = FakeClient(persona="y")
+    conv = dm.model_copy(update={"messages": dm.messages + [msg(98, True, "y", 59), msg(99, False, "hello", 60)]})
+    assert await engine(settings, c).reply(conv) == []  # "y" again three times -> stay quiet
+    s = settings.model_copy(deep=True)
+    s.guardrails.no_repeats = False
+    assert await engine(s, c).reply(conv) == ["y"]

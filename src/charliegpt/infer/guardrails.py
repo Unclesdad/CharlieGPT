@@ -16,7 +16,8 @@ from charliegpt.prompt import BUBBLE, split_bubbles
 COMMITMENT_HINT = re.compile(
     r"\b(wanna|want to|down to|down for|dtf|can you|could you|will you|would you|are you free|r u free|"
     r"free (tonight|tomorrow|today|this)|come (over|thru|through|to|with)|hang( out)?|meet( up)?|pull up|"
-    r"tonight|tomorrow|tmrw|tmr|this weekend|next week|lend|borrow|venmo|zelle|cash ?app|pay|owe|"
+    r"tonight|tn|tonite|2nite|tomorrow|tmrw|tmr|this weekend|next week|lend|borrow|venmo|zelle|cash ?app|pay|owe|"
+    r"(hop|get|jump) (on|in)|play|join|you on|u on|vc|call me|ft|facetime|game|queue|run it|"
     r"promise|help me|pick (me )?up|give me a ride|drive me|join us|you coming|u coming|let'?s go|lets)\b|\$\s?\d+",
     re.I,
 )
@@ -25,8 +26,8 @@ CLASSIFY_PROMPT = """Message(s) someone just sent to {me}:
 \"\"\"
 {text}
 \"\"\"
-Are they asking {me} to commit to something: make plans, meet up, come somewhere, do a favor, \
-lend or pay money, or promise anything? Answer with exactly YES or NO."""
+Are they asking {me} to commit to something: make plans, meet up, come somewhere, hop on a game or call, \
+do a favor, lend or pay money, or promise anything? Answer with exactly YES or NO."""
 
 EXCUSE_PROMPT = """{me} just got this text:
 \"\"\"
@@ -56,6 +57,8 @@ AI_LEAK = re.compile(
     r"projection of you|openai|anthropic|qwen|chat ?gpt|\bgpt\b)",
     re.I,
 )
+# A yes to "are you an AI" is a leak too, however in-character it sounds.
+ADMITS = re.compile(r"^\W*(y+|ya+|ye+|yea+h?|yes+|yep|yup|yh|mhm+|i am|i'?m an? ai|correct|true|maybe)\W*$", re.I)
 # Them asking whether they're talking to a bot.
 ASKS_IF_AI = re.compile(
     r"\b((are|r) (you|u) (an? )?(ai|bot|robot|real|human|chat ?gpt|gpt)|is this (an? )?(ai|bot|real)|"
@@ -139,5 +142,12 @@ def _norm(s: str) -> str:
     return re.sub(r"\W+", "", s.lower())
 
 
-def breaks_character(bubbles: list[str]) -> bool:
-    return bool(AI_LEAK.search(" ".join(bubbles)))
+def breaks_character(bubbles: list[str], incoming: str = "") -> bool:
+    if AI_LEAK.search(" ".join(bubbles)):
+        return True
+    return bool(bubbles and ASKS_IF_AI.search(incoming) and ADMITS.match(bubbles[0]))
+
+
+def repeats(bubbles: list[str], previous: list[str]) -> bool:
+    """Same reply as one of the recent ones (whole burst, ignoring case and punctuation)."""
+    return _norm(" ".join(bubbles)) in {_norm(p) for p in previous}

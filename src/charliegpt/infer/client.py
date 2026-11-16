@@ -33,7 +33,7 @@ class LLMClient:
                     temperature=self.cfg.temperature if temperature is None else temperature,
                     top_p=self.cfg.top_p,
                     max_tokens=max_tokens or self.cfg.max_tokens,
-                    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                    extra_body={"chat_template_kwargs": {"enable_thinking": False}, "repetition_penalty": self.cfg.repetition_penalty},
                 )
                 return resp.choices[0].message.content or ""
             except (APIConnectionError, APITimeoutError) as e:

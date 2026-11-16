@@ -85,6 +85,7 @@ class InferenceCfg(BaseModel):
     helper_model: str = "qwen3-14b"  # plain base model: classifiers, excuses, profiles
     temperature: float = 0.8
     top_p: float = 0.95
+    repetition_penalty: float = 1.1  # >1 discourages reusing tokens already in the chat (stops "y" loops)
     max_tokens: int = 200
     timeout_seconds: float = 60.0
     port: int = 8000
@@ -154,6 +155,8 @@ class GuardrailsCfg(BaseModel):
     )
     # Regenerate (then drop) replies that talk like a bot ("as an AI", "chatbot", "my code"...).
     ai_leak_filter: bool = True
+    # Regenerate a reply that's identical to one of your last 3 (stops loops like "y", "y", "y").
+    no_repeats: bool = True
     # When they ask "are you an AI" and the model can't answer in character, brush it off with one of these.
     deflect_ai_questions: bool = True
     deflections: list[str] = Field(default_factory=lambda: ["lmao what", "bro what 💀", "what are you on", "huh", "no?? 💀"])
