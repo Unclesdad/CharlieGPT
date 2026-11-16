@@ -17,6 +17,7 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.progress import track
 from rich.logging import RichHandler
 from rich.table import Table
@@ -41,7 +42,7 @@ def main(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(message)s", handlers=[RichHandler(console=console, show_path=False)])
-    for noisy in ("httpx", "discord", "openai", "sentence_transformers"):
+    for noisy in ("httpx", "httpx2", "discord", "openai", "sentence_transformers"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     ctx.obj = load_settings(config)
 
@@ -169,7 +170,7 @@ def caption(ctx: typer.Context):
         console.print("vision.backend is 'none'; nothing to do.")
         return
     for f in sorted(s.paths.processed.glob("*.jsonl")):
-        convs = [C.model_validate_json(l) for l in f.read_text(encoding="utf-8").splitlines() if l.strip()]
+        convs = [C.model_validate_json(l) for l in f.read_text(encoding="utf-8").split("\n") if l.strip()]
         n = caption_threads(convs, captioner, on_error=lambda p, e: console.print(f"[yellow]skip {p}: {e}[/]"))
         save_threads(convs, f)
         console.print(f"[green]✓[/] {f.name}: {n} new captions")
@@ -398,7 +399,7 @@ def chat(ctx: typer.Context, them: str = typer.Option("Alex", help="Who you're p
             t0 = time.monotonic()
             bubbles = await engine.reply(conv)
             for b in bubbles:
-                console.print(f"[cyan]{s.identity.name}>[/] {b}")
+                console.print(f"[cyan]{s.identity.name}>[/] {escape(b)}")
                 conv.messages.append(_msg(b, True, s.identity.name))
             console.print(f"[dim]({time.monotonic() - t0:.1f}s)[/]")
 

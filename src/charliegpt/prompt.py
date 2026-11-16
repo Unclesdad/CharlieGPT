@@ -103,6 +103,11 @@ def truncate(ctx: PromptContext, max_chars: int) -> PromptContext:
 
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
+# Placeholders the model learned from your sent media (see Attachment.render). A bot can't send them.
+_MEDIA = re.compile(
+    r'\[(?:image|video|gif|audio|voice memo|sticker|file|link|shared [^\]\s]+)(?::[^\]]*)?\]'
+    r'|\(replying to "[^"]*"\)'
+)
 
 
 def split_bubbles(text: str, me: str) -> list[str]:
@@ -110,7 +115,7 @@ def split_bubbles(text: str, me: str) -> list[str]:
     prefix = re.compile(rf"^\s*{re.escape(me)}\s*:\s*", re.I)
     out = []
     for part in text.split(BUBBLE):
-        part = prefix.sub("", part.strip()).strip()
+        part = re.sub(r"[ \t]{2,}", " ", _MEDIA.sub("", prefix.sub("", part.strip()))).strip()
         if part:
             out.append(part)
     return out

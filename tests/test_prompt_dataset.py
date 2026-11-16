@@ -51,6 +51,12 @@ def test_group_names_gap_marker_and_media(dm, settings):
     assert out[-1]["content"] == '[3 hours later]\nAlex: nm just bored [image: "a cat in a box"]'
 
 
+def test_split_bubbles_drops_media_placeholders():
+    raw = f'[image]{BUBBLE}lmao [sticker: Cat] look{BUBBLE}[shared https://instagram.com/p/x: "@a: hi"]{BUBBLE}(replying to "yo") bet{BUBBLE}[voice memo: "hey"]'
+    assert split_bubbles(raw, "Charlie") == ["lmao look", "bet"]
+    assert split_bubbles("[image]", "Charlie") == []  # the engine regenerates, then stays quiet
+
+
 def test_split_bubbles():
     raw = f"<think>\n\n</think>\n\nCharlie: ya\n{BUBBLE}\n  \n{BUBBLE}\nwhats good"
     assert split_bubbles(raw, "Charlie") == ["ya", "whats good"]

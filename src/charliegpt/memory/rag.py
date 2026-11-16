@@ -45,7 +45,7 @@ class Retriever:
         self.pairs: list[dict] = []
         self.vectors: np.ndarray | None = None
         if (self.index_dir / "pairs.jsonl").exists():
-            self.pairs = [json.loads(l) for l in (self.index_dir / "pairs.jsonl").read_text(encoding="utf-8").splitlines() if l]
+            self.pairs = [json.loads(l) for l in (self.index_dir / "pairs.jsonl").read_text(encoding="utf-8").split("\n") if l]  # not splitlines: texts can contain U+2028
             self.vectors = np.load(self.index_dir / "vectors.npy")
 
     @property
