@@ -260,3 +260,16 @@ async def test_refusals_regenerated_hotter_then_dropped(dm, settings):
     s = settings.model_copy(deep=True)
     s.guardrails.no_refusals = False
     assert await engine(s, FakeClient(persona="nah im not saying it")).reply(conv) == ["nah im not saying it"]
+
+
+def test_only_chats_allowlist(dm, settings):
+    from charliegpt.bots.base import chat_matches
+    from charliegpt.schema import Participant
+
+    sam = dm.model_copy(update={"participants": [Participant(id="me", name="Charlie", is_me=True), Participant(id="+15551234567", name="Sam Lee")]})
+    assert chat_matches(sam, ["(555) 123-4567"]) and chat_matches(sam, ["sam lee"]) and not chat_matches(sam, ["+15559999999"])
+    s = settings.model_copy(deep=True)
+    s.bots.only_chats = ["+1 555 123 4567"]
+    bot = FakeBot(s, engine(s, FakeClient()))
+    assert bot.should_reply(sam, msg(1, False, "yo", 0), False)
+    assert not bot.should_reply(dm, msg(1, False, "yo", 0), False)  # anyone else: ignored

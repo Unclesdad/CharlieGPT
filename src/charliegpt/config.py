@@ -116,7 +116,10 @@ class RagCfg(BaseModel):
 class BotsCfg(BaseModel):
     reply_to_all_dms: bool = True
     reply_in_groups_when_mentioned: bool = True
-    ignore_chats: list[str] = Field(default_factory=list)  # conversation keys or thread ids
+    # Chats to skip / the only chats to answer (empty = all). Each entry: a name, phone number, email,
+    # chat title, or conversation key. A DM matches if the other person does.
+    ignore_chats: list[str] = Field(default_factory=list)
+    only_chats: list[str] = Field(default_factory=list)
     debounce_seconds: float = 8.0  # wait for them to finish their burst
     typing_chars_per_second: float = 7.0
     min_typing_delay: float = 1.0

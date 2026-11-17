@@ -175,6 +175,7 @@ charliegpt pause / resume / status   # kill switch, checked before every send
 
 Behavior (all in `bots:` config):
 - replies to every DM; in group chats only when @mentioned or named (`identity.aliases`)
+- `only_chats: ["+15551234567"]` limits it to one person or chat (names, numbers in any format, emails, chat titles); `ignore_chats` is the opposite
 - waits `debounce_seconds` for the other person to finish, then sends bubbles with typing delays
 - **human takeover:** if you text in a chat yourself, the bot goes quiet there for `takeover_minutes`
 - stays in character; replies that leak "as an AI" are regenerated or dropped

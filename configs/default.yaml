@@ -71,7 +71,8 @@ rag:
 bots:
   reply_to_all_dms: true
   reply_in_groups_when_mentioned: true
-  ignore_chats: []
+  ignore_chats: []              # never reply here: names, numbers, emails, chat titles
+  only_chats: []                # if set, reply ONLY here, e.g. ["+15551234567"] for one person
   debounce_seconds: 8
   typing_chars_per_second: 7
   takeover_minutes: 30

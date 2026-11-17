@@ -38,6 +38,21 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def _digits(s: str) -> str:
+    return re.sub(r"\D", "", s)[-10:]  # "+1 (555) 123-4567" and "5551234567" are the same number
+
+
+def chat_matches(conv: Conversation, entries: list[str]) -> bool:
+    """An entry can be the chat key/id, its title, or someone in it (name, phone number, email, Discord id)."""
+    if not entries:
+        return False
+    others = [p for p in conv.participants if not p.is_me]
+    names = {conv.key, conv.thread_id, conv.title or ""} | {p.id for p in others} | {p.name for p in others}
+    names = {n.lower() for n in names if n}
+    phones = {_digits(p.id) for p in others if len(_digits(p.id)) >= 7}
+    return any(e.lower() in names or (len(_digits(e)) >= 7 and _digits(e) in phones) for e in entries)
+
+
 class BaseBot(ABC):
     platform: Platform
 
@@ -67,7 +82,9 @@ class BaseBot(ABC):
 
     # ---- shared logic ---------------------------------------------------
     def should_reply(self, conv: Conversation, msg: Message, mentioned: bool) -> bool:
-        if msg.is_me or conv.key in self.cfg.ignore_chats or conv.thread_id in self.cfg.ignore_chats:
+        if msg.is_me or chat_matches(conv, self.cfg.ignore_chats):
+            return False
+        if self.cfg.only_chats and not chat_matches(conv, self.cfg.only_chats):
             return False
         if not conv.is_group:
             return self.cfg.reply_to_all_dms
