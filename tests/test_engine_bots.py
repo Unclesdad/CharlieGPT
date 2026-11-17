@@ -273,3 +273,16 @@ def test_only_chats_allowlist(dm, settings):
     bot = FakeBot(s, engine(s, FakeClient()))
     assert bot.should_reply(sam, msg(1, False, "yo", 0), False)
     assert not bot.should_reply(dm, msg(1, False, "yo", 0), False)  # anyone else: ignored
+
+
+def test_local_config_overrides_default(tmp_path, monkeypatch):
+    from charliegpt.config import load_settings
+
+    (tmp_path / "configs").mkdir()
+    (tmp_path / "configs" / "default.yaml").write_text("bots:\n  debounce_seconds: 8\n  dry_run: false\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("CHARLIEGPT_CONFIG", raising=False)
+    assert load_settings().bots.only_chats == []
+    (tmp_path / "configs" / "local.yaml").write_text('extends: default.yaml\nbots:\n  only_chats: ["+15551234567"]\n')
+    s = load_settings()
+    assert s.bots.only_chats == ["+15551234567"] and s.bots.debounce_seconds == 8

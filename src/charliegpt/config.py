@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 DEFAULT_CONFIG = Path("configs/default.yaml")
+# Your machine's overrides (gitignored): used instead of default.yaml when present. Start it with `extends: default.yaml`.
+LOCAL_CONFIG = Path("configs/local.yaml")
 
 
 class Identity(BaseModel):
@@ -213,7 +215,7 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 
 def load_settings(path: Path | str | None = None) -> Settings:
     load_dotenv()
-    path = Path(path or os.environ.get("CHARLIEGPT_CONFIG", DEFAULT_CONFIG))
+    path = Path(path or os.environ.get("CHARLIEGPT_CONFIG") or (LOCAL_CONFIG if LOCAL_CONFIG.exists() else DEFAULT_CONFIG))
     raw = _read_yaml(path) if path.exists() else {}
     return Settings.model_validate(raw)
 

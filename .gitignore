@@ -16,6 +16,9 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
+# your machine's config overrides (phone numbers, IPs, paths)
+configs/local.yaml
+
 # local file lists (contain personal paths)
 imsg_files.txt
 *_files.txt

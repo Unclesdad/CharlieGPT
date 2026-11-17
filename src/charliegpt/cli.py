@@ -38,7 +38,7 @@ def S(ctx: typer.Context) -> Settings:
 @app.callback()
 def main(
     ctx: typer.Context,
-    config: Optional[Path] = typer.Option(None, "--config", "-c", help="YAML config (default: configs/default.yaml)"),
+    config: Optional[Path] = typer.Option(None, "--config", "-c", help="YAML config (default: configs/local.yaml if it exists, else configs/default.yaml)"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="%(message)s", handlers=[RichHandler(console=console, show_path=False)])

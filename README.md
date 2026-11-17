@@ -53,6 +53,8 @@ uv sync --extra cuda --extra rag --extra discord --extra vision
 
 Edit `configs/default.yaml` → `identity`: your name, aliases, Discord user id, Instagram display name, and optional `contacts` overrides (phone/email → name; the `.vcf` in `data/messages` is picked up automatically, or set `contacts_vcf`).
 
+For anything specific to one machine (the Ubuntu box's IP, `vision.path_map`, who the bot talks to), make a `configs/local.yaml` starting with `extends: default.yaml` and put only your overrides in it. It's gitignored and used automatically, so `git pull` never conflicts with it.
+
 ## 1. Get your data
 
 Each source gets its own folder under `data/` (gitignored). Parsers only read their own folder and write the uniform format to `features/<source>.jsonl` (also gitignored).
